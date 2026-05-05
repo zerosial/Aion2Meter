@@ -63,10 +63,10 @@ internal static class Program
                 var result = await AutoUpdater.CheckAsync(msg => Console.Error.WriteLine(msg));
                 if (result.HasValue)
                 {
-                    var (ver, url) = result.Value;
+                    var (ver, url, notes) = result.Value;
                     overlay.Invoke(() =>
                     {
-                        var toast = new Forms.UpdateToastForm(overlay, ver, url);
+                        var toast = new Forms.UpdateToastForm(overlay, ver, url, notes);
                         toast.Show();
                     });
                 }

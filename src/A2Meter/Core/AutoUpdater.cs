@@ -53,7 +53,7 @@ internal static class AutoUpdater
             if (downloadUrl == null) { log?.Invoke("[updater] asset not found"); return null; }
 
             log?.Invoke($"[updater] update available: {remoteVer}");
-            return (remoteVer, downloadUrl);
+            return (remoteVer, downloadUrl, release.Body ?? "");
         }
         catch (Exception ex)
         {
@@ -116,6 +116,7 @@ internal static class AutoUpdater
     private sealed class GitHubRelease
     {
         [JsonPropertyName("tag_name")]  public string? TagName { get; set; }
+        [JsonPropertyName("body")]      public string? Body { get; set; }
         [JsonPropertyName("assets")]    public GitHubAsset[]? Assets { get; set; }
     }
 

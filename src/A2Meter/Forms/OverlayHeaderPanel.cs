@@ -47,7 +47,7 @@ internal sealed class OverlayHeaderPanel : Panel
 
         _brand = new Label
         {
-            Text      = "A2Meter",
+            Text      = $"A2Meter v{AutoUpdater.CurrentVersion.ToString(3)}",
             ForeColor = AppSettings.Instance.Theme.TextColor,
             Font      = new Font(AppSettings.Instance.FontName, AppSettings.Instance.FontSize + 0.5f, FontStyle.Bold),
             AutoSize  = true,

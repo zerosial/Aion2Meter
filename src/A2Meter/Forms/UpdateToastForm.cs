@@ -11,17 +11,19 @@ namespace A2Meter.Forms;
 internal sealed class UpdateToastForm : Form
 {
     private readonly string _downloadUrl;
+    private readonly string _releaseNotes;
     private readonly Version _version;
     private readonly Form _parent;
 
     private readonly ToastButton _btnUpdate;
     private readonly ToastButton _btnClose;
 
-    public UpdateToastForm(Form parent, Version version, string downloadUrl)
+    public UpdateToastForm(Form parent, Version version, string downloadUrl, string releaseNotes)
     {
         _parent = parent;
         _version = version;
         _downloadUrl = downloadUrl;
+        _releaseNotes = releaseNotes;
 
         var theme = AppSettings.Instance.Theme;
 
@@ -111,24 +113,11 @@ internal sealed class UpdateToastForm : Form
         g.FillPath(bgBrush, bgPath);
     }
 
-    private async void OnUpdateClick(object? sender, EventArgs e)
+    private void OnUpdateClick(object? sender, EventArgs e)
     {
-        try
-        {
-            _btnUpdate.Enabled = false;
-            _btnUpdate.Text = "...";
-            _btnUpdate.Invalidate();
-
-            await AutoUpdater.ApplyAsync(_downloadUrl, _version, msg => Console.Error.WriteLine(msg));
-
-            AppSettings.Instance.Save();
-            Environment.Exit(0);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[updater] apply failed: {ex.Message}");
-            Close();
-        }
+        var detail = new UpdateDetailForm(_version, _downloadUrl, _releaseNotes);
+        detail.Show();
+        Close();
     }
 
     private static GraphicsPath RoundRect(int x, int y, int w, int h, int r)
