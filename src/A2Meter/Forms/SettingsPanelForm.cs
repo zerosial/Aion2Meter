@@ -271,6 +271,14 @@ internal sealed class SettingsPanelForm : Form
         content.Controls.Add(ddPctMode);
         y += 42;
 
+        // 3.7 DPS bar layout
+        content.Controls.Add(SectionLabel("DPS바 레이아웃", left, y));
+        y += 22;
+        y = AddBarSlotRow(content, "슬롯 1 (이름 옆)", settings.BarSlot1, left, y, settings);
+        y = AddBarSlotRow(content, "슬롯 2 (오른쪽)", settings.BarSlot2, left, y, settings);
+        y = AddBarSlotRow(content, "슬롯 3 (맨 오른쪽)", settings.BarSlot3, left, y, settings);
+        y += 10;
+
         // 4. GPU
         var chkGpu = StyledCheckBox("GPU 가속 사용", left, y,
             string.Equals(settings.GpuMode, "on", StringComparison.OrdinalIgnoreCase));
@@ -315,6 +323,7 @@ internal sealed class SettingsPanelForm : Form
         y = AddShortcutRow(content, "프로그램 재시작", shortcuts.Restart, left, y, v => { shortcuts.Restart = v; settings.SaveDebounced(); });
         y = AddShortcutRow(content, "익명 모드", shortcuts.Anonymous, left, y, v => { shortcuts.Anonymous = v; settings.SaveDebounced(); });
         y = AddShortcutRow(content, "컴팩트 모드", shortcuts.Compact, left, y, v => { shortcuts.Compact = v; settings.SaveDebounced(); });
+        y = AddShortcutRow(content, "숨기기", shortcuts.Hide, left, y, v => { shortcuts.Hide = v; settings.SaveDebounced(); });
 
         y += 10;
         content.Size = new Size(ClientSize.Width, y);
@@ -420,7 +429,7 @@ internal sealed class SettingsPanelForm : Form
         return btn;
     }
 
-    private static int AddShortcutRow(Panel content, string label, string currentValue, int left, int y, Action<string> onChanged)
+    private int AddShortcutRow(Panel content, string label, string currentValue, int left, int y, Action<string> onChanged)
     {
         var t = AppSettings.Instance.Theme;
         content.Controls.Add(new Label
@@ -440,6 +449,12 @@ internal sealed class SettingsPanelForm : Form
             ForeColor = t.TextColor,
             BorderStyle = BorderStyle.FixedSingle,
             Font = new Font(AppSettings.Instance.FontName, AppSettings.Instance.FontSize),
+        };
+        txt.GotFocus += (_, _) => (Owner as OverlayForm)?.Hotkeys?.Suspend();
+        txt.LostFocus += (_, _) =>
+        {
+            var hotkeys = (Owner as OverlayForm)?.Hotkeys;
+            hotkeys?.Resume(AppSettings.Instance.Shortcuts);
         };
         txt.KeyDown += (_, e) =>
         {
@@ -465,6 +480,64 @@ internal sealed class SettingsPanelForm : Form
         };
         content.Controls.Add(txt);
         return y + 32;
+    }
+
+    private int AddBarSlotRow(Panel content, string label, BarSlotConfig slot, int left, int y, AppSettings settings)
+    {
+        var t = settings.Theme;
+        content.Controls.Add(new Label
+        {
+            Text = label,
+            ForeColor = t.TextColor,
+            Font = new Font(AppSettings.Instance.FontName, AppSettings.Instance.FontSize - 0.5f),
+            AutoSize = true, Location = new Point(left, y + 4), BackColor = Color.Transparent,
+        });
+
+        // Content dropdown
+        var contentItems = new List<string> { "없음", "기여도", "대미지", "DPS" };
+        int curIdx = slot.Content switch { "percent" => 1, "damage" => 2, "dps" => 3, _ => 0 };
+        var dd = new DarkDropdown(contentItems, curIdx)
+        {
+            Location = new Point(left + 120, y), Width = 90,
+        };
+        dd.SelectionChanged += idx =>
+        {
+            slot.Content = idx switch { 1 => "percent", 2 => "damage", 3 => "dps", _ => "none" };
+            settings.SaveDebounced();
+            SettingsChanged?.Invoke();
+        };
+        content.Controls.Add(dd);
+
+        // Font size
+        var sizeItems = new List<string> { "7", "7.5", "8", "8.5", "9", "9.5", "10", "11" };
+        var ddSize = new DarkDropdown(sizeItems, FindIndex(sizeItems, slot.FontSize.ToString("0.#")))
+        {
+            Location = new Point(left + 218, y), Width = 54,
+        };
+        ddSize.SelectionChanged += idx =>
+        {
+            if (idx >= 0 && idx < sizeItems.Count && float.TryParse(sizeItems[idx], out float v))
+            {
+                slot.FontSize = v;
+                settings.SaveDebounced();
+                SettingsChanged?.Invoke();
+            }
+        };
+        content.Controls.Add(ddSize);
+
+        // Color swatch
+        Color c;
+        try { c = ColorTranslator.FromHtml(slot.Color); } catch { c = Color.Gray; }
+        var swatch = new ColorSwatch(c, 0) { Location = new Point(left + 280, y + 3) };
+        swatch.ColorPicked += (_, newColor) =>
+        {
+            slot.Color = ColorTranslator.ToHtml(newColor);
+            settings.SaveDebounced();
+            SettingsChanged?.Invoke();
+        };
+        content.Controls.Add(swatch);
+
+        return y + 34;
     }
 
     private static void ExportTheme(AppSettings settings)

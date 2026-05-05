@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using A2Meter.Api;
 using A2Meter.Core;
 using A2Meter.Direct2D;
 using D2DColor = Vortice.Mathematics.Color4;
@@ -170,12 +171,32 @@ internal sealed class DpsDetailForm : Form
         _rows.Clear();
         if (row.Skills is { Count: > 0 })
         {
+            // Prefer SkillLevels carried on the row (saved in history JSON);
+            // fall back to the live API cache.
+            var lvMap = row.SkillLevels;
+            if (lvMap is not { Count: > 0 })
+            {
+                string cleanName = row.Name;
+                int idx = cleanName.IndexOf('[');
+                if (idx > 0) cleanName = cleanName[..idx];
+                lvMap = SkillLevelCache.Instance.Get(cleanName, row.ServerId)?.SkillLevels;
+            }
+
             foreach (var s in row.Skills)
             {
                 long avg = s.Hits > 0 ? s.Total / s.Hits : 0;
                 long dps = elapsed > 0 ? (long)(s.Total / elapsed) : 0;
+
+                // Append skill level if available.
+                string displayName = s.Name;
+                if (lvMap != null
+                    && lvMap.TryGetValue(s.Name, out var lv) && lv > 0)
+                {
+                    displayName = $"{s.Name} Lv{lv}";
+                }
+
                 _rows.Add(new SkillRow(
-                    s.Name, s.Specs, $"{s.Hits}",
+                    displayName, s.Specs, $"{s.Hits}",
                     Pct(s.CritRate), Pct(s.BackRate), Pct(s.StrongRate),
                     Pct(s.PerfectRate), Pct(s.MultiHitRate), Pct(s.DodgeRate), Pct(s.BlockRate),
                     s.MaxHit > 0 ? $"{s.MaxHit:N0}" : "-",

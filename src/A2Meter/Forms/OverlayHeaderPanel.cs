@@ -205,7 +205,7 @@ internal sealed class OverlayHeaderPanel : Panel
 
     // ─── Owner-drawn icon button ─────────────────────────────────────
 
-    public enum IconKind { Lock, Unlock, Eye, EyeOff, History, Settings, Close }
+    public enum IconKind { Lock, Unlock, Eye, EyeOff, History, Settings, Close, CpOn, CpOff, ScoreOn, ScoreOff }
 
     private sealed class IconButton : Control
     {
@@ -260,6 +260,10 @@ internal sealed class OverlayHeaderPanel : Panel
                 case IconKind.History:  DrawHistory(g, pen, cx, cy); break;
                 case IconKind.Settings: DrawGear(g, pen, cx, cy);   break;
                 case IconKind.Close:    DrawCross(g, pen, cx, cy);  break;
+                case IconKind.CpOn:     DrawCpLabel(g, cx, cy, on: true);  break;
+                case IconKind.CpOff:    DrawCpLabel(g, cx, cy, on: false); break;
+                case IconKind.ScoreOn:  DrawScoreLabel(g, cx, cy, on: true);  break;
+                case IconKind.ScoreOff: DrawScoreLabel(g, cx, cy, on: false); break;
             }
         }
 
@@ -325,6 +329,24 @@ internal sealed class OverlayHeaderPanel : Panel
         {
             g.DrawLine(pen, cx - 5, cy - 5, cx + 5, cy + 5);
             g.DrawLine(pen, cx + 5, cy - 5, cx - 5, cy + 5);
+        }
+
+        private static void DrawCpLabel(Graphics g, int cx, int cy, bool on)
+        {
+            var color = on ? Color.FromArgb(100, 180, 255) : Color.FromArgb(90, 90, 100);
+            using var font = new Font("Malgun Gothic", 6.5f, FontStyle.Bold);
+            using var brush = new SolidBrush(color);
+            var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString("전투력", font, brush, cx, cy, sf);
+        }
+
+        private static void DrawScoreLabel(Graphics g, int cx, int cy, bool on)
+        {
+            var color = on ? Color.FromArgb(232, 200, 77) : Color.FromArgb(90, 90, 100);
+            using var font = new Font("Malgun Gothic", 6.5f, FontStyle.Bold);
+            using var brush = new SolidBrush(color);
+            var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString("아툴", font, brush, cx, cy, sf);
         }
     }
 

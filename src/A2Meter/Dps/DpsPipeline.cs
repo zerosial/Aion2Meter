@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using A2Meter.Core;
 using A2Meter.Direct2D;
 using A2Meter.Dps.Protocol;
 using D2DColor = Vortice.Mathematics.Color4;
@@ -37,6 +38,9 @@ internal sealed class DpsPipeline : IDisposable
     private DateTime   _countdownStart;     // combat start time for countdown
     private bool       _countdownExpired;   // true = timer ended, stop measuring
 
+    // ── Network / performance monitors ──
+    public PingMonitor Ping { get; } = new();
+
     // Cached last-frame data so we keep showing bars after session ends.
     private IReadOnlyList<DpsCanvas.PlayerRow>? _lastRows;
     private long   _lastTotal;
@@ -63,6 +67,7 @@ internal sealed class DpsPipeline : IDisposable
         _source.TargetChanged   += OnTargetChanged;
         _source.PartyMemberSeen += OnPartyMemberSeen;
         _source.PartyLeft       += () => _party.ClearPartyFlags();
+        _source.SegmentReceived += seg => Ping.Feed(seg);
 
         _pushTimer = new System.Threading.Timer(_ => Push(), null,
             System.Threading.Timeout.Infinite, PushIntervalMs);
@@ -112,14 +117,21 @@ internal sealed class DpsPipeline : IDisposable
     {
         _party.Upsert(m);
 
-        // Zone transition: when self is re-detected, unconditionally reset.
+        // Trigger async skill level fetch from Plaync API (self + party only).
+        if (!string.IsNullOrEmpty(m.Nickname) && m.ServerId > 0 && (m.IsSelf || m.IsPartyMember))
+            Api.SkillLevelCache.Instance.EnsureLoaded(m.Nickname, m.ServerId);
+
+        // Detection triggers immediate canvas refresh to show the new member row.
+        if (_canvas != null)
+            _canvas.Invalidate();
+
+        // Zone transition: when self is re-detected, freeze session (stop timer)
+        // but keep data visible until next combat or manual reset.
         if (m.IsSelf)
         {
-            if (_selfDetectedOnce)
+            if (_selfDetectedOnce && _sessionActive)
             {
-                ResetSession();
-                _lastSummary = null;
-                _lastRows = null;
+                _sessionActive = false;
                 _currentTarget = null;
                 _currentTargetId = 0;
             }
@@ -165,9 +177,13 @@ internal sealed class DpsPipeline : IDisposable
             }
         }
 
-        // Start countdown clock on first hit of a new session.
-        if (!_sessionActive && _countdownSec > 0)
-            _countdownStart = DateTime.UtcNow;
+        // First hit of a new session: purge non-party members and start countdown.
+        if (!_sessionActive)
+        {
+            _party.PurgeNonParty();
+            if (_countdownSec > 0)
+                _countdownStart = DateTime.UtcNow;
+        }
 
         _meter.RecordHit(e.ActorId, e.TargetId, e.Name, e.JobCode, e.Damage, e.HitFlags, e.IsHeal, e.Skill, e.ExtraHits, e.IsDot, e.Specs);
         _lastHitUtc = DateTime.UtcNow;
@@ -186,9 +202,12 @@ internal sealed class DpsPipeline : IDisposable
     {
         if (_viewingHistory) return;
 
-        // Sync countdown state to canvas.
+        // Sync countdown state and perf monitors to canvas.
         if (_canvas != null)
+        {
             _canvas.CountdownExpired = _countdownExpired;
+            _canvas.PingMs = Ping.CurrentPingMs;
+        }
 
         // When a boss is active, scope the canvas to that boss's damage only —
         // matches the original A2Power "기록 조회 중" view. Otherwise show the
@@ -306,6 +325,47 @@ internal sealed class DpsPipeline : IDisposable
     private void SaveRecord(DpsSnapshot snap)
     {
         if (snap.TotalPartyDamage <= 0) return;
+
+        // Enrich snapshot players with CP/Score, skill levels, and server info before saving.
+        foreach (var p in snap.Players)
+        {
+            string cleanName = StripServerSuffix(p.Name);
+            int sid = p.ServerId;
+            string sname = p.ServerName;
+            int cp = p.CombatPower;
+            int score = p.CombatScore;
+
+            foreach (var pm in _party.Members.Values)
+            {
+                if (string.Equals(StripServerSuffix(pm.Nickname), cleanName, StringComparison.Ordinal))
+                {
+                    if (cp == 0 && pm.CombatPower > 0) cp = pm.CombatPower;
+                    if (pm.ServerId > 0 && sid == 0) { sid = pm.ServerId; sname = pm.ServerName; }
+                    break;
+                }
+            }
+            if (string.IsNullOrEmpty(sname) && sid > 0)
+                sname = Protocol.ServerMap.GetName(sid);
+
+            var apiData = Api.SkillLevelCache.Instance.Get(cleanName, sid);
+            if (apiData != null)
+            {
+                if (cp == 0 && apiData.CombatPower > 0) cp = apiData.CombatPower;
+                if (score == 0 && apiData.CombatScore > 0) score = apiData.CombatScore;
+                if (apiData.SkillLevels is { Count: > 0 })
+                    p.SkillLevels = apiData.SkillLevels;
+            }
+
+            p.CombatPower = cp;
+            p.CombatScore = score;
+            p.ServerId = sid;
+            p.ServerName = sname;
+
+            // Display name with server suffix for web upload.
+            if (!string.IsNullOrEmpty(sname) && !p.Name.Contains('['))
+                p.Name = $"{p.Name}[{sname}]";
+        }
+
         _history.Save(new CombatRecord
         {
             Timestamp   = DateTime.Now,
@@ -371,16 +431,31 @@ internal sealed class DpsPipeline : IDisposable
                 skills = sb;
             }
 
-            int cp = 0;
+            int cp = p.CombatPower;
+            int score = p.CombatScore;
             int sid = p.ServerId;
             string sname = p.ServerName;
-            if (_party.Members.TryGetValue((uint)p.EntityId, out var pm))
+            string cleanName = StripServerSuffix(p.Name);
+            // PartyTracker is keyed by CharacterId, not EntityId — look up by nickname.
+            foreach (var pm in _party.Members.Values)
             {
-                cp = pm.CombatPower;
-                if (pm.ServerId > 0) { sid = pm.ServerId; sname = pm.ServerName; }
+                if (string.Equals(StripServerSuffix(pm.Nickname), cleanName, StringComparison.Ordinal))
+                {
+                    if (cp == 0 && pm.CombatPower > 0) cp = pm.CombatPower;
+                    if (pm.ServerId > 0 && sid == 0) { sid = pm.ServerId; sname = pm.ServerName; }
+                    break;
+                }
             }
             if (string.IsNullOrEmpty(sname) && sid > 0)
                 sname = ServerMap.GetName(sid);
+
+            // Enrich CP/Score from API cache if packet-derived values are 0.
+            var apiData = Api.SkillLevelCache.Instance.Get(cleanName, sid);
+            if (apiData != null)
+            {
+                if (cp == 0 && apiData.CombatPower > 0) cp = apiData.CombatPower;
+                if (score == 0 && apiData.CombatScore > 0) score = apiData.CombatScore;
+            }
             long peak = _peakByActor.TryGetValue(p.EntityId, out var pk) ? pk : p.Dps;
             long avg  = elapsedSec > 0 ? (long)(p.TotalDamage / elapsedSec) : p.Dps;
 
@@ -392,8 +467,9 @@ internal sealed class DpsPipeline : IDisposable
                 pct = (double)p.TotalDamage / _currentTarget.MaxHp;
             }
 
+            string displayName = !string.IsNullOrEmpty(sname) && !p.Name.Contains('[') ? $"{p.Name}[{sname}]" : p.Name;
             rows.Add(new DpsCanvas.PlayerRow(
-                Name:        p.Name,
+                Name:        displayName,
                 JobIconKey:  JobCodeToKey(p.JobCode),
                 Damage:      p.TotalDamage,
                 Percent:     pct,
@@ -403,12 +479,58 @@ internal sealed class DpsPipeline : IDisposable
                 AccentColor: JobAccent(p.JobCode),
                 Skills:      skills,
                 CombatPower: cp,
+                CombatScore: score,
                 PeakDps:     peak,
                 AvgDps:      avg,
                 DotDamage:   p.DotDamage,
                 ServerId:    sid,
-                ServerName:  sname));
+                ServerName:  sname,
+                SkillLevels: p.SkillLevels));
         }
+
+        // Append detected party members who have no combat data yet as placeholder rows.
+        // existingNames uses clean nicknames (without [서버명]) to avoid mismatch.
+        var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var r in rows) existingNames.Add(StripServerSuffix(r.Name));
+
+        foreach (var pm in _party.Members.Values)
+        {
+            if (string.IsNullOrEmpty(pm.Nickname)) continue;
+            string cleanNick = StripServerSuffix(pm.Nickname);
+            if (existingNames.Contains(cleanNick)) continue;
+            if (!pm.IsSelf && !pm.IsPartyMember) continue;
+            existingNames.Add(cleanNick);
+
+            int pmCp = pm.CombatPower;
+            int pmScore = 0;
+            int pmSid = pm.ServerId;
+            string pmSname = pm.ServerName;
+            if (string.IsNullOrEmpty(pmSname) && pmSid > 0)
+                pmSname = ServerMap.GetName(pmSid);
+
+            var pmApi = Api.SkillLevelCache.Instance.Get(pm.Nickname, pmSid);
+            if (pmApi != null)
+            {
+                if (pmCp == 0 && pmApi.CombatPower > 0) pmCp = pmApi.CombatPower;
+                if (pmScore == 0 && pmApi.CombatScore > 0) pmScore = pmApi.CombatScore;
+            }
+
+            string pmDisplayName = !string.IsNullOrEmpty(pmSname) && !pm.Nickname.Contains('[') ? $"{pm.Nickname}[{pmSname}]" : pm.Nickname;
+            rows.Add(new DpsCanvas.PlayerRow(
+                Name:        pmDisplayName,
+                JobIconKey:  JobCodeToKey(pm.JobCode),
+                Damage:      0,
+                Percent:     0,
+                DpsValue:    0,
+                CritRate:    0,
+                HealTotal:   0,
+                AccentColor: JobAccent(pm.JobCode),
+                CombatPower: pmCp,
+                CombatScore: pmScore,
+                ServerId:    pmSid,
+                ServerName:  pmSname));
+        }
+
         return rows;
     }
 
@@ -419,6 +541,12 @@ internal sealed class DpsPipeline : IDisposable
     {
         var s = (int)Math.Max(0, seconds);
         return $"{s / 60}:{s % 60:00}";
+    }
+
+    private static string StripServerSuffix(string name)
+    {
+        int idx = name.IndexOf('[');
+        return idx > 0 ? name[..idx] : name;
     }
 
     private static string JobCodeToKey(int gameCode) => JobMapping.GameToJobName(gameCode);

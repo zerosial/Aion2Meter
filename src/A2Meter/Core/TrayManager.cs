@@ -27,13 +27,17 @@ internal sealed class TrayManager : IDisposable
             Visible = true,
             ContextMenuStrip = BuildMenu(getOverlayOnlyWhenAion, setOverlayOnlyWhenAion),
         };
-        _icon.Click += (_, _) => _form.ShowOverlay();
+        _icon.Click += (_, _) => _form.ToggleVisibility();
     }
+
+    private ToolStripMenuItem? _hideItem;
 
     private ContextMenuStrip BuildMenu(Func<bool> getFlag, Action<bool> setFlag)
     {
         var menu = new ContextMenuStrip();
         menu.Items.Add("열기", null, (_, _) => _form.ShowOverlay());
+        _hideItem = new ToolStripMenuItem("숨기기 (Alt+H)", null, (_, _) => _form.ToggleVisibility());
+        menu.Items.Add(_hideItem);
         menu.Items.Add("잠금 해제", null, (_, _) => _form.Unlock());
         menu.Items.Add(new ToolStripSeparator());
 
@@ -60,6 +64,13 @@ internal sealed class TrayManager : IDisposable
 
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("종료", null, (_, _) => _form.RequestAppClose());
+
+        menu.Opening += (_, _) =>
+        {
+            if (_hideItem != null)
+                _hideItem.Text = _form.Visible ? "숨기기 (Alt+H)" : "보이기 (Alt+H)";
+        };
+
         return menu;
     }
 

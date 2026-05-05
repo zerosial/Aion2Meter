@@ -32,11 +32,13 @@ internal sealed class DpsCanvas : Control
         D2DColor       AccentColor,
         IReadOnlyList<SkillBar>? Skills = null,
         int            CombatPower = 0,
+        int            CombatScore = 0,
         long           PeakDps = 0,
         long           AvgDps = 0,
         long           DotDamage = 0,
         int            ServerId = 0,
-        string         ServerName = "");
+        string         ServerName = "",
+        Dictionary<string, int>? SkillLevels = null);
 
     public sealed record SkillBar(
         string Name,
@@ -87,6 +89,7 @@ internal sealed class DpsCanvas : Control
     private IDWriteTextFormat? _fontName;
     private IDWriteTextFormat? _fontNumber;
     private IDWriteTextFormat? _fontSmall;
+    private IDWriteTextFormat? _fontCpScore;
     private IDWriteTextFormat? _fontTotal;
 
     private readonly List<PlayerRow> _rows = new();
@@ -113,6 +116,26 @@ internal sealed class DpsCanvas : Control
 
     /// When true, show "직업명[서버명]" instead of nickname.
     public bool AnonymousMode { get; set; }
+
+    /// Network ping in ms (set by pipeline).
+    public int PingMs { get; set; }
+
+
+    // ── Toast notifications ──
+    private readonly Queue<(string Text, DateTime Expires)> _toasts = new();
+    private const double ToastDurationSec = 3.0;
+
+    /// Show a brief notification on the canvas.
+    public void ShowToast(string message)
+    {
+        lock (_toasts)
+        {
+            _toasts.Enqueue((message, DateTime.UtcNow.AddSeconds(ToastDurationSec)));
+            // Keep max 4 visible.
+            while (_toasts.Count > 4) _toasts.Dequeue();
+        }
+        Invalidate();
+    }
 
     /// Compact mode flag (unused in DpsCanvas rendering now — compact uses CompactOverlayForm).
     public bool CompactMode { get; set; }
@@ -271,12 +294,14 @@ internal sealed class DpsCanvas : Control
         _fontName   = _fonts.CreateUi(baseSize + 4f);
         _fontNumber = _fonts.CreateUi(baseSize + 4f);
         _fontSmall  = _fonts.CreateUi(baseSize + 1f);
+        _fontCpScore = _fonts.CreateUi(baseSize);
         _fontTotal  = _fonts.CreateUi(baseSize + 6f);
     }
 
     private void DisposeFonts()
     {
         _fontTotal?.Dispose(); _fontTotal = null;
+        _fontCpScore?.Dispose(); _fontCpScore = null;
         _fontSmall?.Dispose(); _fontSmall = null;
         _fontNumber?.Dispose(); _fontNumber = null;
         _fontName?.Dispose(); _fontName = null;
@@ -286,6 +311,7 @@ internal sealed class DpsCanvas : Control
     {
         _icons?.Dispose();
         _fontTotal?.Dispose();
+        _fontCpScore?.Dispose();
         _fontSmall?.Dispose();
         _fontNumber?.Dispose();
         _fontName?.Dispose();
@@ -343,11 +369,43 @@ internal sealed class DpsCanvas : Control
                 DrawTextOptions.None, MeasuringMode.Natural);
         }
 
+        // CP / Score toggle badges (clickable: 150~210, 210~270)
+        {
+            var settings = Core.AppSettings.Instance;
+            var cpColor = settings.ShowCombatPower
+                ? new D2DColor(0.39f, 0.71f, 1f, 1f)    // 활성: 파랑
+                : new D2DColor(0.35f, 0.35f, 0.4f, 1f); // 비활성: 회색
+            _brushBarFill!.Color = cpColor;
+            dc.DrawText("전투력", _fontSmall!, new Rect(150f, y + 2f, 56f, HeaderHeight - 2f), _brushBarFill,
+                DrawTextOptions.None, MeasuringMode.Natural);
+
+            var atColor = settings.ShowCombatScore
+                ? new D2DColor(0.91f, 0.78f, 0.30f, 1f) // 활성: 금색
+                : new D2DColor(0.35f, 0.35f, 0.4f, 1f); // 비활성: 회색
+            _brushBarFill.Color = atColor;
+            dc.DrawText("아툴", _fontSmall!, new Rect(206f, y + 2f, 50f, HeaderHeight - 2f), _brushBarFill,
+                DrawTextOptions.None, MeasuringMode.Natural);
+        }
+
+        // Total damage (right-aligned, limited width so it doesn't cover ping/FPS)
         var totalLayout = _ctx!.DWriteFactory.CreateTextLayout(
-            FormatDamage(_totalDamage), _fontTotal!, w, HeaderHeight);
+            FormatDamage(_totalDamage), _fontTotal!, w * 0.45f, HeaderHeight);
         totalLayout.TextAlignment = TextAlignment.Trailing;
-        dc.DrawTextLayout(new Vector2(PadX, y), totalLayout, _brushAccent!);
+        dc.DrawTextLayout(new Vector2(PadX + w * 0.55f, y), totalLayout, _brushAccent!);
         totalLayout.Dispose();
+
+        // Ping indicator (right of badges, left of total damage)
+        if (PingMs > 0)
+        {
+            string perfText = $"{PingMs}ms";
+            float perfLeft = 256f;
+            float perfW = PadX + w * 0.55f - perfLeft;
+            if (perfW > 40f)
+            {
+                dc.DrawText(perfText, _fontSmall!, new Rect(perfLeft, y + 2f, perfW, HeaderHeight - 2f), _brushTextDim!,
+                    DrawTextOptions.None, MeasuringMode.Natural);
+            }
+        }
 
         return y + HeaderHeight + 6f;
     }
@@ -466,32 +524,77 @@ internal sealed class DpsCanvas : Control
             string displayName = AnonymousMode && !string.IsNullOrEmpty(row.JobIconKey)
                 ? (string.IsNullOrEmpty(row.ServerName) ? row.JobIconKey : $"{row.JobIconKey}[{row.ServerName}]")
                 : row.Name;
-            string nameText = row.CombatPower > 0 ? $"{displayName}  {row.CombatPower:N0}" : displayName;
 
-            // Name (left) + contribution % next to name
-            var nameLayout = _ctx!.DWriteFactory.CreateTextLayout(nameText, _fontName!, numW * 0.6f, 16);
+            var settings = Core.AppSettings.Instance;
+
+            // Name (left)
+            var nameLayout = _ctx!.DWriteFactory.CreateTextLayout(displayName, _fontName!, numW * 0.5f, 16);
             dc.DrawTextLayout(new Vector2(textLeft, y + 5), nameLayout, nameBrush);
             float nameWidth = nameLayout.Metrics.WidthIncludingTrailingWhitespace;
             nameLayout.Dispose();
 
-            string contribText = $" {row.Percent * 100:0.#}%";
-            dc.DrawText(contribText, _fontSmall!, new Rect(textLeft + nameWidth, y + 6, 60, 14), _brushTextDim!,
-                DrawTextOptions.None, MeasuringMode.Natural);
+            // CP / Score (이름 오른쪽, 좌측 정렬, _fontSmall보다 1pt 작게)
+            const float charW = 7f;
+            const float fieldGap = 3f;
 
-            // DPS — gold color, right-aligned
-            string dpsText = FormatDamage(row.DpsValue) + "/s";
-            var dpsLayout = _ctx.DWriteFactory.CreateTextLayout(dpsText, _fontNumber!, numW, 16);
-            dpsLayout.TextAlignment = TextAlignment.Trailing;
-            float dpsWidth = dpsLayout.Metrics.Width;
-            dc.DrawTextLayout(new Vector2(textLeft, y + 4), dpsLayout, _brushGold!);
-            dpsLayout.Dispose();
+            float cpScoreX = textLeft + nameWidth + 4f;
+            if (settings.ShowCombatPower)
+            {
+                string cpText = row.CombatPower > 0 ? $"{row.CombatPower:N0}" : "—";
+                // 전투력 = 파랑 (버튼 활성 색상과 동일)
+                _brushBarFill!.Color = new D2DColor(0.39f, 0.71f, 1f, 1f);
+                dc.DrawText(cpText, _fontCpScore!, new Rect(cpScoreX, y + 8, cpText.Length * charW + 4f, 14), _brushBarFill,
+                    DrawTextOptions.None, MeasuringMode.Natural);
+                cpScoreX += cpText.Length * charW + fieldGap;
+            }
+            if (settings.ShowCombatScore)
+            {
+                string scoreText = row.CombatScore > 0 ? $"{row.CombatScore:N0}" : "—";
+                // 아툴 = 금색 (버튼 활성 색상과 동일)
+                _brushBarFill!.Color = new D2DColor(0.91f, 0.78f, 0.30f, 1f);
+                dc.DrawText(scoreText, _fontCpScore!, new Rect(cpScoreX, y + 8, scoreText.Length * charW + 4f, 14), _brushBarFill,
+                    DrawTextOptions.None, MeasuringMode.Natural);
+            }
 
-            // Total damage — dim, left of DPS
-            string totalText = FormatDamage(row.Damage);
-            var totalLayout = _ctx.DWriteFactory.CreateTextLayout(totalText, _fontSmall!, numW - dpsWidth - 6, 16);
-            totalLayout.TextAlignment = TextAlignment.Trailing;
-            dc.DrawTextLayout(new Vector2(textLeft, y + 6), totalLayout, _brushTextDim!);
-            totalLayout.Dispose();
+            // Slot 3 (우측 정렬, 가장 오른쪽)
+            float slot3Width = 0f;
+            var slot3Text = GetSlotText(settings.BarSlot3, row);
+            if (slot3Text != null)
+            {
+                var slot3Font = GetSlotFont(settings.BarSlot3);
+                var slot3Layout = _ctx.DWriteFactory.CreateTextLayout(slot3Text, slot3Font, numW, 16);
+                slot3Layout.TextAlignment = TextAlignment.Trailing;
+                slot3Width = slot3Layout.Metrics.Width;
+                using var slot3Brush = dc.CreateSolidColorBrush(ParseSlotColor(settings.BarSlot3.Color));
+                dc.DrawTextLayout(new Vector2(textLeft, y + 4), slot3Layout, slot3Brush);
+                slot3Layout.Dispose();
+            }
+
+            // Slot 2 (우측 정렬, Slot3 왼쪽)
+            float slot2Width = 0f;
+            var slot2Text = GetSlotText(settings.BarSlot2, row);
+            if (slot2Text != null)
+            {
+                var slot2Font = GetSlotFont(settings.BarSlot2);
+                var slot2Layout = _ctx.DWriteFactory.CreateTextLayout(slot2Text, slot2Font, numW - slot3Width - 6, 16);
+                slot2Layout.TextAlignment = TextAlignment.Trailing;
+                slot2Width = slot2Layout.Metrics.Width;
+                using var slot2Brush = dc.CreateSolidColorBrush(ParseSlotColor(settings.BarSlot2.Color));
+                dc.DrawTextLayout(new Vector2(textLeft, y + 6), slot2Layout, slot2Brush);
+                slot2Layout.Dispose();
+            }
+
+            // Slot 1 (우측 정렬, Slot2 왼쪽)
+            var slot1Text = GetSlotText(settings.BarSlot1, row);
+            if (slot1Text != null)
+            {
+                var slot1Font = GetSlotFont(settings.BarSlot1);
+                var slot1Layout = _ctx.DWriteFactory.CreateTextLayout(slot1Text, slot1Font, numW - slot3Width - slot2Width - 12, 16);
+                slot1Layout.TextAlignment = TextAlignment.Trailing;
+                using var slot1Brush = dc.CreateSolidColorBrush(ParseSlotColor(settings.BarSlot1.Color));
+                dc.DrawTextLayout(new Vector2(textLeft, y + 6), slot1Layout, slot1Brush);
+                slot1Layout.Dispose();
+            }
 
             _rowHitAreas.Add((y, y + RowH, idx));
             y += RowH + RowGap;
@@ -514,6 +617,7 @@ internal sealed class DpsCanvas : Control
         }
     }
 
+
     private void OnPlayerRowClick(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Left) return;
@@ -524,6 +628,26 @@ internal sealed class DpsCanvas : Control
         if (clickY >= 6f && clickY < 6f + HeaderHeight && clickX >= 70f && clickX < 150f)
         {
             CountdownClicked?.Invoke();
+            return;
+        }
+
+        // 전투력 toggle hit area (150~206)
+        if (clickY >= 6f && clickY < 6f + HeaderHeight && clickX >= 150f && clickX < 206f)
+        {
+            var s = Core.AppSettings.Instance;
+            s.ShowCombatPower = !s.ShowCombatPower;
+            s.SaveDebounced();
+            Invalidate();
+            return;
+        }
+
+        // 아툴 toggle hit area (206~256)
+        if (clickY >= 6f && clickY < 6f + HeaderHeight && clickX >= 206f && clickX < 256f)
+        {
+            var s = Core.AppSettings.Instance;
+            s.ShowCombatScore = !s.ShowCombatScore;
+            s.SaveDebounced();
+            Invalidate();
             return;
         }
 
@@ -588,5 +712,46 @@ internal sealed class DpsCanvas : Control
         if (v >= 1_000_000)     return (v / 1_000_000d).ToString("0.##") + "M";
         if (v >= 1_000)         return (v / 1_000d).ToString("0.#") + "K";
         return v.ToString();
+    }
+
+    // ─── Bar slot helpers ────────────────────────────────────────────
+
+    private static string? GetSlotText(Core.BarSlotConfig slot, PlayerRow row)
+    {
+        return slot.Content switch
+        {
+            "percent" => $" {row.Percent * 100:0.#}%",
+            "damage"  => FormatDamage(row.Damage),
+            "dps"     => FormatDamage(row.DpsValue) + "/s",
+            _ => null,
+        };
+    }
+
+    private IDWriteTextFormat GetSlotFont(Core.BarSlotConfig slot)
+    {
+        // Use the slot font size to pick the closest available format.
+        if (slot.FontSize >= 9f) return _fontNumber!;
+        return _fontSmall!;
+    }
+
+    private void DrawBarSlot(ID2D1DeviceContext dc, Core.BarSlotConfig slot, PlayerRow row,
+        float x, float y, float w, float h, bool rightAlign)
+    {
+        var text = GetSlotText(slot, row);
+        if (text == null) return;
+        var font = GetSlotFont(slot);
+        using var brush = dc.CreateSolidColorBrush(ParseSlotColor(slot.Color));
+        dc.DrawText(text, font, new Rect(x, y, w, h), brush,
+            DrawTextOptions.None, MeasuringMode.Natural);
+    }
+
+    private static D2DColor ParseSlotColor(string hex)
+    {
+        try
+        {
+            var c = Core.AppSettings.ThemeColors.ParseHex(hex);
+            return new D2DColor(c.R / 255f, c.G / 255f, c.B / 255f, 1f);
+        }
+        catch { return new D2DColor(0.43f, 0.43f, 0.5f, 1f); }
     }
 }

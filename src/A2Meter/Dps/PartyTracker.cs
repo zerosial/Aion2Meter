@@ -59,6 +59,26 @@ internal sealed class PartyTracker
         if (!member.IsPartyMember && !string.IsNullOrEmpty(member.Nickname) && _partyNames.Contains(member.Nickname))
             member.IsPartyMember = true;
 
+        // When CharacterId is 0 (e.g. CombatPowerByName event), merge into
+        // an existing entry found by nickname instead of creating a ghost at key 0.
+        if (member.CharacterId == 0 && !string.IsNullOrEmpty(member.Nickname))
+        {
+            foreach (var kvp in _members)
+            {
+                if (kvp.Value.Nickname == member.Nickname)
+                {
+                    var exist = kvp.Value;
+                    if (member.CombatPower > exist.CombatPower) exist.CombatPower = member.CombatPower;
+                    if (member.ServerId > 0 && exist.ServerId == 0) { exist.ServerId = member.ServerId; exist.ServerName = member.ServerName; }
+                    if (member.JobCode > 0 && exist.JobCode == 0) exist.JobCode = member.JobCode;
+                    if (member.IsPartyMember) exist.IsPartyMember = true;
+                    Changed?.Invoke();
+                    return;
+                }
+            }
+            // No existing entry — fall through and store at key 0.
+        }
+
         // Preserve existing IsPartyMember flag when upserting identity-only data.
         if (!member.IsPartyMember && _members.TryGetValue(member.CharacterId, out var existing))
             member.IsPartyMember = existing.IsPartyMember;
@@ -78,6 +98,18 @@ internal sealed class PartyTracker
         _partyNames.Clear();
         foreach (var m in _members.Values)
             m.IsPartyMember = false;
+        Changed?.Invoke();
+    }
+
+    /// Remove members that are neither self nor confirmed party members.
+    public void PurgeNonParty()
+    {
+        var toRemove = new List<uint>();
+        foreach (var kvp in _members)
+            if (!kvp.Value.IsSelf && !kvp.Value.IsPartyMember)
+                toRemove.Add(kvp.Key);
+        if (toRemove.Count == 0) return;
+        foreach (var id in toRemove) _members.Remove(id);
         Changed?.Invoke();
     }
 

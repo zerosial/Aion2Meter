@@ -32,6 +32,8 @@ internal sealed class CompactOverlayForm : Form
     private string _timer = "";
     private MobTarget? _target;
 
+    /// Network ping in ms (set externally).
+    public int PingMs { get; set; }
     // ── D2D offscreen resources ──
     private ID2D1Factory1? _d2dFactory;
     private IDWriteFactory? _dwFactory;
@@ -60,6 +62,7 @@ internal sealed class CompactOverlayForm : Form
     private IDWriteTextFormat? _fontName;
     private IDWriteTextFormat? _fontNumber;
     private IDWriteTextFormat? _fontSmall;
+    private IDWriteTextFormat? _fontCpScore;
 
     public CompactOverlayForm()
     {
@@ -131,7 +134,10 @@ internal sealed class CompactOverlayForm : Form
         _totalDamage = totalDamage;
         _timer = timer;
         _target = target;
-        RenderFrame();
+
+        // Marshal to UI thread — PushData is called from the pipeline timer thread.
+        if (!IsHandleCreated || IsDisposed) return;
+        try { BeginInvoke(RenderFrame); } catch { }
     }
 
     public void RenderFrame()
@@ -221,12 +227,14 @@ internal sealed class CompactOverlayForm : Form
         _fontName?.Dispose();
         _fontNumber?.Dispose();
         _fontSmall?.Dispose();
+        _fontCpScore?.Dispose();
 
         var s = AppSettings.Instance;
         float baseSize = s.FontSize * s.FontScale / 100f;
         _fontName   = _fonts.CreateUi(baseSize + 4f);
         _fontNumber = _fonts.CreateUi(baseSize + 4f);
         _fontSmall  = _fonts.CreateUi(baseSize + 1f);
+        _fontCpScore = _fonts.CreateUi(baseSize);
     }
 
     private void EnsureTextures(int w, int h)
@@ -288,20 +296,37 @@ internal sealed class CompactOverlayForm : Form
 
     private float DrawHeader(float y)
     {
-        if (_totalDamage <= 0 && string.IsNullOrEmpty(_timer)) return y;
+        bool hasData = _totalDamage > 0 || !string.IsNullOrEmpty(_timer);
+        bool hasPerf = PingMs > 0;
+        if (!hasData && !hasPerf) return y;
 
         float w = _texW - PadX * 2;
 
         // Timer (left)
-        _dc!.DrawText(_timer, _fontSmall!, new Rect(PadX, y, 60f, HeaderH), _brushText!,
-            DrawTextOptions.None, MeasuringMode.Natural);
+        if (hasData)
+        {
+            _dc!.DrawText(_timer, _fontSmall!, new Rect(PadX, y, 60f, HeaderH), _brushText!,
+                DrawTextOptions.None, MeasuringMode.Natural);
+        }
+
+        // Ping
+        if (PingMs > 0)
+        {
+            string perfText = $"{PingMs}ms";
+            float perfX = hasData ? PadX + 60f : PadX;
+            _dc!.DrawText(perfText, _fontSmall!, new Rect(perfX, y, 80f, HeaderH), _brushTextDim!,
+                DrawTextOptions.None, MeasuringMode.Natural);
+        }
 
         // Total damage (right)
-        string totalText = FormatDamage(_totalDamage);
-        var totalLayout = _dwFactory!.CreateTextLayout(totalText, _fontSmall!, w, HeaderH);
-        totalLayout.TextAlignment = TextAlignment.Trailing;
-        _dc.DrawTextLayout(new Vector2(PadX, y), totalLayout, _brushAccent!);
-        totalLayout.Dispose();
+        if (_totalDamage > 0)
+        {
+            string totalText = FormatDamage(_totalDamage);
+            var totalLayout = _dwFactory!.CreateTextLayout(totalText, _fontSmall!, w, HeaderH);
+            totalLayout.TextAlignment = TextAlignment.Trailing;
+            _dc!.DrawTextLayout(new Vector2(PadX, y), totalLayout, _brushAccent!);
+            totalLayout.Dispose();
+        }
 
         return y + HeaderH + 2f;
     }
@@ -342,6 +367,7 @@ internal sealed class CompactOverlayForm : Form
         long maxDamage = _rows[0].Damage;
         if (maxDamage <= 0) maxDamage = 1;
 
+        var settings = AppSettings.Instance;
         using var fillBrush = _dc!.CreateSolidColorBrush(new D2DColor(1, 1, 1, 0.35f));
 
         for (int i = 0; i < _rows.Count && y + RowH < _texH; i++)
@@ -362,39 +388,112 @@ internal sealed class CompactOverlayForm : Form
             float textLeft = PadX + 8f;
             float numW = w - 16f;
 
-            // Name (left) + contribution % next to name
+            // Name (left)
             var nameBrush = row.ServerId switch
             {
                 >= 1000 and < 2000 => _brushNameAsmo!,
                 >= 2000 and < 3000 => _brushNameElyos!,
                 _ => _brushText!,
             };
-            var nameLayout = _dwFactory!.CreateTextLayout(row.Name, _fontName!, numW * 0.6f, 16);
+            string compactName = ShortenServerSuffix(row.Name);
+            var nameLayout = _dwFactory!.CreateTextLayout(compactName, _fontName!, numW * 0.5f, 16);
             _dc.DrawTextLayout(new Vector2(textLeft, y + 5), nameLayout, nameBrush);
             float nameWidth = nameLayout.Metrics.WidthIncludingTrailingWhitespace;
             nameLayout.Dispose();
 
-            string contribText = $" {row.Percent * 100:0.#}%";
-            _dc.DrawText(contribText, _fontSmall!, new Rect(textLeft + nameWidth, y + 6, 60, 14), _brushTextDim!,
-                DrawTextOptions.None, MeasuringMode.Natural);
+            // CP / Score + Slot 1 (대미지 > 0이면 숨김)
+            const float cCharW = 7f;
+            const float cFieldGap = 3f;
+            float slot1X = textLeft + nameWidth + 4f;
+            bool showCpScore = row.Damage <= 0;
+            if (showCpScore && settings.ShowCombatPower)
+            {
+                string cpText = row.CombatPower > 0 ? $"{row.CombatPower:N0}" : "—";
+                using var cpBrush = _dc.CreateSolidColorBrush(new D2DColor(0.39f, 0.71f, 1f, 1f));
+                _dc.DrawText(cpText, _fontCpScore!, new Rect(slot1X, y + 8, cpText.Length * cCharW + 4f, 14), cpBrush,
+                    DrawTextOptions.None, MeasuringMode.Natural);
+                slot1X += cpText.Length * cCharW + cFieldGap;
+            }
+            if (showCpScore && settings.ShowCombatScore)
+            {
+                string scoreText = row.CombatScore > 0 ? $"{row.CombatScore:N0}" : "—";
+                using var scoreBrush = _dc.CreateSolidColorBrush(new D2DColor(0.91f, 0.78f, 0.30f, 1f));
+                _dc.DrawText(scoreText, _fontCpScore!, new Rect(slot1X, y + 8, scoreText.Length * cCharW + 4f, 14), scoreBrush,
+                    DrawTextOptions.None, MeasuringMode.Natural);
+                slot1X += scoreText.Length * cCharW + cFieldGap;
+            }
+            // CP/Score가 보이는 행에서는 슬롯 1/2/3 숨김
+            if (!showCpScore)
+            {
+                var slot1Text = GetSlotText(settings.BarSlot1, row);
+                if (slot1Text != null)
+                {
+                    _dc.DrawText(slot1Text, _fontSmall!, new Rect(slot1X, y + 7, slot1Text.Length * 7.5f + 4f, 14), _brushTextDim!,
+                        DrawTextOptions.None, MeasuringMode.Natural);
+                }
 
-            // DPS — gold, right-aligned
-            string dpsText = FormatDamage(row.DpsValue) + "/s";
-            var dpsLayout = _dwFactory.CreateTextLayout(dpsText, _fontNumber!, numW, 16);
-            dpsLayout.TextAlignment = TextAlignment.Trailing;
-            float dpsWidth = dpsLayout.Metrics.Width;
-            _dc.DrawTextLayout(new Vector2(textLeft, y + 4), dpsLayout, _brushGold!);
-            dpsLayout.Dispose();
+                // Slot 3 (right-aligned, outermost)
+                float slot3Width = 0f;
+                var slot3Text = GetSlotText(settings.BarSlot3, row);
+                if (slot3Text != null)
+                {
+                    using var slot3Brush = _dc.CreateSolidColorBrush(ParseSlotColor(settings.BarSlot3.Color));
+                    var slot3Layout = _dwFactory.CreateTextLayout(slot3Text, _fontNumber!, numW, 16);
+                    slot3Layout.TextAlignment = TextAlignment.Trailing;
+                    slot3Width = slot3Layout.Metrics.Width;
+                    _dc.DrawTextLayout(new Vector2(textLeft, y + 4), slot3Layout, slot3Brush);
+                    slot3Layout.Dispose();
+                }
 
-            // Total damage — dim, left of DPS
-            string totalText = FormatDamage(row.Damage);
-            var totalLayout = _dwFactory.CreateTextLayout(totalText, _fontSmall!, numW - dpsWidth - 6, 16);
-            totalLayout.TextAlignment = TextAlignment.Trailing;
-            _dc.DrawTextLayout(new Vector2(textLeft, y + 6), totalLayout, _brushTextDim!);
-            totalLayout.Dispose();
+                // Slot 2 (right-aligned, left of slot3)
+                var slot2Text = GetSlotText(settings.BarSlot2, row);
+                if (slot2Text != null)
+                {
+                    using var slot2Brush = _dc.CreateSolidColorBrush(ParseSlotColor(settings.BarSlot2.Color));
+                    var slot2Layout = _dwFactory.CreateTextLayout(slot2Text, _fontSmall!, numW - slot3Width - 6, 16);
+                    slot2Layout.TextAlignment = TextAlignment.Trailing;
+                    _dc.DrawTextLayout(new Vector2(textLeft, y + 6), slot2Layout, slot2Brush);
+                    slot2Layout.Dispose();
+                }
+            }
 
             y += RowH + RowGap;
         }
+    }
+
+
+    /// "남힐[네자칸]" → "남힐[네자]"
+    private static string ShortenServerSuffix(string name)
+    {
+        int open = name.IndexOf('[');
+        int close = name.IndexOf(']');
+        if (open < 0 || close <= open) return name;
+        string server = name[(open + 1)..close];
+        string shortServer = server.Length > 2 ? server[..2] : server;
+        return $"{name[..open]}[{shortServer}]";
+    }
+
+    // ─── Bar slot helpers (mirrors DpsCanvas logic) ────────────────────
+
+    private static string? GetSlotText(BarSlotConfig slot, DpsCanvas.PlayerRow row)
+    {
+        return slot.Content switch
+        {
+            "percent" => $" {row.Percent * 100:0.#}%",
+            "damage"  => FormatDamage(row.Damage),
+            "dps"     => FormatDamage(row.DpsValue) + "/s",
+            _ => null,
+        };
+    }
+
+    private static D2DColor ParseSlotColor(string hex)
+    {
+        try
+        {
+            var c = AppSettings.ThemeColors.ParseHex(hex);
+            return new D2DColor(c.R / 255f, c.G / 255f, c.B / 255f, 1f);
+        }
+        catch { return new D2DColor(0.43f, 0.43f, 0.5f, 1f); }
     }
 
     // ── Pixel readback → UpdateLayeredWindow ──────────────────────────────
@@ -467,6 +566,7 @@ internal sealed class CompactOverlayForm : Form
 
     private void DisposeD2D()
     {
+        _fontCpScore?.Dispose();
         _fontSmall?.Dispose();
         _fontNumber?.Dispose();
         _fontName?.Dispose();

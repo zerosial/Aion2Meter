@@ -249,16 +249,33 @@ internal sealed class OverlayForm : Form
 
     public void ShowOverlay()
     {
-        if (!Visible) Show();
-        if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
-        BringToFront();
+        if (_compactMode && _compactForm != null)
+        {
+            _compactForm.Show();
+            _compactForm.BringToFront();
+        }
+        else
+        {
+            if (!Visible) Show();
+            if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+            BringToFront();
+        }
     }
 
-    public void HideOverlay() => Hide();
+    public void HideOverlay()
+    {
+        if (_compactMode && _compactForm != null)
+            _compactForm.Hide();
+        else
+            Hide();
+    }
 
     public void ToggleVisibility()
     {
-        if (Visible) HideOverlay(); else ShowOverlay();
+        bool isVisible = _compactMode && _compactForm != null
+            ? _compactForm.Visible
+            : Visible;
+        if (isVisible) HideOverlay(); else ShowOverlay();
     }
 
     public void ToggleCompact()
@@ -272,9 +289,11 @@ internal sealed class OverlayForm : Form
             _compactForm ??= new CompactOverlayForm();
             _compactForm.Location = Location;
             _compactForm.Size = Size;
-            // Subscribe to data updates.
+            // Subscribe to data updates + perf.
             if (_pipeline != null)
-                _pipeline.DataPushed += _compactForm.PushData;
+            {
+                _pipeline.DataPushed += OnCompactDataPushed;
+            }
             _compactForm.Show();
             _compactForm.RenderFrame();
             Hide();
@@ -283,7 +302,9 @@ internal sealed class OverlayForm : Form
         {
             // Unsubscribe and hide compact form.
             if (_pipeline != null)
-                _pipeline.DataPushed -= _compactForm!.PushData;
+            {
+                _pipeline.DataPushed -= OnCompactDataPushed;
+            }
             // Sync position from compact form back to main overlay.
             if (_compactForm != null)
             {
@@ -295,6 +316,14 @@ internal sealed class OverlayForm : Form
             Show();
             if (_locked) _lockBtn?.Show();
         }
+    }
+
+    private void OnCompactDataPushed(IReadOnlyList<Direct2D.DpsCanvas.PlayerRow> rows, long total,
+        string timer, Dps.MobTarget? target, Direct2D.DpsCanvas.SessionSummary? summary)
+    {
+        if (_compactForm == null) return;
+        _compactForm.PingMs = _pipeline?.Ping.CurrentPingMs ?? 0;
+        _compactForm.PushData(rows, total, timer, target, summary);
     }
 
     private void SetClickThrough(bool passThrough)

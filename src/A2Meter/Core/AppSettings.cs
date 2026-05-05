@@ -83,6 +83,15 @@ internal sealed class AppSettings
     public string DpsTimeMode { get; set; } = "wallclock";
     public string NumberFormat { get; set; } = "abbreviated";  // "full" | "abbreviated"
 
+    // ── toggle display ──
+    public bool ShowCombatPower { get; set; } = true;
+    public bool ShowCombatScore { get; set; } = true;
+
+    // ── DPS bar layout: 3 configurable slots ──
+    public BarSlotConfig BarSlot1 { get; set; } = new() { Content = "percent", FontSize = 8f, Color = "#6E6E80" };
+    public BarSlotConfig BarSlot2 { get; set; } = new() { Content = "damage",  FontSize = 8f, Color = "#6E6E80" };
+    public BarSlotConfig BarSlot3 { get; set; } = new() { Content = "dps",     FontSize = 9f, Color = "#E8C84D" };
+
     // ── secondary windows ──
     public int DetailPanelX { get; set; } = -1;
     public int DetailPanelY { get; set; } = -1;
@@ -217,4 +226,13 @@ internal sealed class AppSettings
             try { File.Copy(path, bak, overwrite: true); } catch { }
         }
     }
+}
+
+/// Configurable slot for DPS bar layout.
+/// Content: "none" | "percent" | "damage" | "dps"
+internal sealed class BarSlotConfig
+{
+    public string Content { get; set; } = "none";
+    public float FontSize { get; set; } = 8f;
+    public string Color { get; set; } = "#6E6E80";
 }

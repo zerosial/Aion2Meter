@@ -34,6 +34,7 @@ internal sealed class ActorDps
     public long   Hits { get; set; }
     public long   DotDamage { get; set; }
     public List<SkillDps>? TopSkills { get; set; }
+    public Dictionary<string, int>? SkillLevels { get; set; }
 }
 
 internal sealed class SkillDps

@@ -122,6 +122,7 @@ var sampleDamage = new List<string>();
 var sampleUser   = new List<string>();
 var sampleMob    = new List<string>();
 
+dispatcher.EnableUnparsedDump(false);
 dispatcher.Damage += (a, t, sk, dt, dmg, fl, mhc, mhd, heal, dot) =>
 {
     nDamage++;
@@ -342,6 +343,96 @@ Console.WriteLine();
 if (sampleDamage.Count > 0) { Console.WriteLine("Sample damage:");   foreach (var s in sampleDamage) Console.WriteLine("  " + s); }
 if (sampleUser.Count   > 0) { Console.WriteLine("Sample userinfo:"); foreach (var s in sampleUser) Console.WriteLine("  " + s); }
 if (sampleMob.Count    > 0) { Console.WriteLine("Sample mobspawn:"); foreach (var s in sampleMob)  Console.WriteLine("  " + s); }
+
+// ── pass 5: scan large dispatched messages for skill code patterns ──
+Console.WriteLine();
+Console.WriteLine("=== Scanning large messages (tag 0x1156) for skill codes ===");
+var skillScanHits = new Dictionary<string, List<(int offset, int code)>>();
+int msgCount = 0;
+var scanStream = new StreamProcessor(
+    (data, off, len) =>
+    {
+        if (len < 100) return;
+        // Check for tag 0x11 0x56 within first 10 bytes
+        int tagPos = -1;
+        for (int i = off; i < Math.Min(off + 10, off + len - 1); i++)
+            if (data[i] == 0x11 && data[i+1] == 0x56) { tagPos = i; break; }
+        if (tagPos < 0 && len < 2000) return; // only scan large or tagged packets
+
+        msgCount++;
+        var found = new List<(int, int)>();
+        // Scan for 4-byte LE integers in skill range 11000000-20000000
+        for (int i = off; i + 4 <= off + len; i++)
+        {
+            int val = data[i] | (data[i+1] << 8) | (data[i+2] << 16) | (data[i+3] << 24);
+            if (val >= 11_000_000 && val < 20_000_000 && val % 10000 == 0)
+            {
+                var sn = skills.GetSkillName(val);
+                if (sn != null)
+                    found.Add((i - off, val));
+            }
+        }
+        if (found.Count >= 5)
+        {
+            string key = $"msg#{msgCount} tag={(tagPos >= 0 ? "0x1156" : "other")} len={len}";
+            skillScanHits[key] = found;
+        }
+        // Find "대지의 응보" (17010000=0x01039C40) and "단죄" (17350000=0x0108DCA0) in large packets
+        if (tagPos >= 0 && found.Count > 100)
+        {
+            Console.Error.WriteLine($"[SKILLDUMP] len={len} skillCount={found.Count}");
+            // Search for target skills
+            int[] targets = { 17010000, 17350000, 17440000 }; // 대지의응보, 단죄, 고결한기운
+            foreach (int target in targets)
+            {
+                byte[] pattern = BitConverter.GetBytes(target);
+                for (int i = off; i + 4 <= off + len; i++)
+                {
+                    if (data[i] == pattern[0] && data[i+1] == pattern[1] && data[i+2] == pattern[2] && data[i+3] == pattern[3])
+                    {
+                        // Found! Dump 30 bytes before and 30 bytes after
+                        int relOff = i - off;
+                        var sb = new System.Text.StringBuilder();
+                        int from = Math.Max(off, i - 20);
+                        int to   = Math.Min(off + len, i + 30);
+                        for (int b = from; b < to; b++)
+                        {
+                            if (b == i) sb.Append("[");
+                            sb.Append($"{data[b]:X2}");
+                            if (b == i + 3) sb.Append("]");
+                            sb.Append(" ");
+                        }
+                        Console.Error.WriteLine($"  {skills.GetSkillName(target)} at off={relOff}: {sb}");
+                        break; // only first occurrence
+                    }
+                }
+            }
+        }
+    });
+var flows5 = new Dictionary<(IPAddress, int, IPAddress, int), TcpReassembler>();
+foreach (var path in files) WalkPcap(path, (ts, src, sp, dst, dp, seq, payload) =>
+{
+    if (sp != serverPort) return;
+    var key = (src, sp, dst, dp);
+    if (!flows5.TryGetValue(key, out var rasm))
+    {
+        rasm = new TcpReassembler(b => scanStream.ProcessData(b));
+        flows5[key] = rasm;
+    }
+    rasm.Feed(seq, payload);
+});
+if (skillScanHits.Count == 0)
+    Console.WriteLine("  (no messages with 5+ skill codes found)");
+else
+{
+    foreach (var kv in skillScanHits.OrderByDescending(x => x.Value.Count).Take(5))
+    {
+        Console.WriteLine($"  {kv.Key}: {kv.Value.Count} skill codes found");
+        foreach (var (ofs, code) in kv.Value.Take(20))
+            Console.WriteLine($"    offset={ofs,5}: {code} ({skills.GetSkillName(code)})");
+        if (kv.Value.Count > 20) Console.WriteLine($"    ... +{kv.Value.Count - 20} more");
+    }
+}
 
 return 0;
 
