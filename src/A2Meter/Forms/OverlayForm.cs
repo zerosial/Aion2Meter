@@ -28,6 +28,7 @@ internal sealed class OverlayForm : Form
     private DpsPipeline? _pipeline;
     private ProtocolPipeline? _protocol;
     private ForegroundWatcher? _fgWatcher;
+    private CompactOverlayForm? _compactForm;
 
     /// Optional override: when set before Load fires, OverlayForm uses this packet source
     /// instead of constructing a live PacketSniffer. Used for replay mode.
@@ -65,7 +66,7 @@ internal sealed class OverlayForm : Form
         ShowInTaskbar = false;
         TopMost = true;
         StartPosition = FormStartPosition.Manual;
-        MinimumSize = new Size(380, 360);
+        MinimumSize = new Size(100, 100);
 
         var ws = AppSettings.Instance.WindowState;
         Location = new Point(ws.X, ws.Y);
@@ -160,6 +161,7 @@ internal sealed class OverlayForm : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         _fgWatcher?.Dispose();
+        _compactForm?.Close();
         _lockBtn?.Close();
         _pipeline?.Dispose();
         _protocol?.Dispose();
@@ -201,6 +203,7 @@ internal sealed class OverlayForm : Form
         form.SettingsChanged += () =>
         {
             _dps.ApplySettings();
+            _compactForm?.ApplySettings();
             var t = AppSettings.Instance.Theme;
             BackColor = t.BgColor;
             _header.BackColor = t.HeaderColor;
@@ -261,7 +264,45 @@ internal sealed class OverlayForm : Form
     public void ToggleCompact()
     {
         _compactMode = !_compactMode;
-        // TODO: tell DpsCanvas to redraw in compact layout
+
+        if (_compactMode)
+        {
+            _lockBtn?.Hide();
+            // Create compact overlay at same position/size.
+            _compactForm ??= new CompactOverlayForm();
+            _compactForm.Location = Location;
+            _compactForm.Size = Size;
+            // Subscribe to data updates.
+            if (_pipeline != null)
+                _pipeline.DataPushed += _compactForm.PushData;
+            _compactForm.Show();
+            _compactForm.RenderFrame();
+            Hide();
+        }
+        else
+        {
+            // Unsubscribe and hide compact form.
+            if (_pipeline != null)
+                _pipeline.DataPushed -= _compactForm!.PushData;
+            // Sync position from compact form back to main overlay.
+            if (_compactForm != null)
+            {
+                Location = _compactForm.Location;
+                PersistWindowState();
+            }
+            _compactForm?.Hide();
+            // Restore overlay.
+            Show();
+            if (_locked) _lockBtn?.Show();
+        }
+    }
+
+    private void SetClickThrough(bool passThrough)
+    {
+        var ex = Win32Native.GetWindowLong(Handle, Win32Native.GWL_EXSTYLE);
+        if (passThrough) ex |=  Win32Native.WS_EX_TRANSPARENT;
+        else             ex &= ~Win32Native.WS_EX_TRANSPARENT;
+        Win32Native.SetWindowLong(Handle, Win32Native.GWL_EXSTYLE, ex);
     }
 
     public void TriggerClearShortcut()  => _pipeline?.Reset();

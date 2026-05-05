@@ -4,7 +4,7 @@ internal sealed class ShortcutSettings
 {
     public string Toggle    { get; set; } = "Alt+`";
     public string Refresh   { get; set; } = "Alt+`";
-    public string Compact   { get; set; } = "";
+    public string Compact   { get; set; } = "Alt+C";
     public string SwitchTab { get; set; } = "";
     public string Reset     { get; set; } = "Alt+`";
     public string Restart   { get; set; } = "Alt+Shift+R";

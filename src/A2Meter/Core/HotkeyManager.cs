@@ -34,6 +34,7 @@ internal sealed class HotkeyManager : IDisposable
         TryRegister(shortcuts.Reset,     () => _form.TriggerClearShortcut());
         TryRegister(shortcuts.Restart,   () => _form.TriggerRestart());
         TryRegister(shortcuts.Anonymous, () => _form.TriggerAnonymousToggle());
+        TryRegister(shortcuts.Compact,   () => _form.ToggleCompact());
     }
 
     public void Suspend()

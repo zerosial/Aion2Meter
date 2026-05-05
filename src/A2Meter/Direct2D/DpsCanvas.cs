@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using A2Meter.Dps;
 using Vortice.DCommon;
@@ -112,6 +113,9 @@ internal sealed class DpsCanvas : Control
 
     /// When true, show "직업명[서버명]" instead of nickname.
     public bool AnonymousMode { get; set; }
+
+    /// Compact mode flag (unused in DpsCanvas rendering now — compact uses CompactOverlayForm).
+    public bool CompactMode { get; set; }
 
     public DpsCanvas()
     {
@@ -224,8 +228,8 @@ internal sealed class DpsCanvas : Control
         _brushAccent   = dc.CreateSolidColorBrush(new D2DColor(0.455f, 0.753f, 0.988f, 1f));  // --accent #74c0fc
         _brushHpBg     = dc.CreateSolidColorBrush(new D2DColor(0.20f, 0.07f, 0.10f, 1.00f));
         _brushHpFill   = dc.CreateSolidColorBrush(new D2DColor(0.85f, 0.20f, 0.25f, 1.00f));
-        _brushNameAsmo  = dc.CreateSolidColorBrush(new D2DColor(0.55f, 0.82f, 1.00f, 1f));  // 하늘색
-        _brushNameElyos = dc.CreateSolidColorBrush(new D2DColor(0.76f, 0.65f, 1.00f, 1f));  // 연보라
+        _brushNameElyos  = dc.CreateSolidColorBrush(new D2DColor(0.55f, 0.82f, 1.00f, 1f));  // 하늘색
+        _brushNameAsmo = dc.CreateSolidColorBrush(new D2DColor(0.76f, 0.65f, 1.00f, 1f));  // 연보라
 
         ApplyThemeBrushes();
 
@@ -312,7 +316,8 @@ internal sealed class DpsCanvas : Control
         dc.Clear(ColorToD2D(Core.AppSettings.Instance.Theme.BgColor));
 
         float y = 6f;
-        y = DrawHeader(dc, y);
+        if (!CompactMode)
+            y = DrawHeader(dc, y);
         y = DrawTargetBar(dc, y);
         DrawRows(dc, y);
 
@@ -366,6 +371,12 @@ internal sealed class DpsCanvas : Control
                 RadiusX = 3f, RadiusY = 3f
             }, _brushHpFill!);
         }
+
+        // 1/3 and 2/3 marker lines.
+        float x1 = PadX + w / 3f;
+        float x2 = PadX + w * 2f / 3f;
+        dc.DrawLine(new Vector2(x1, y + 2), new Vector2(x1, y + TargetBarH - 2), _brushBarBorder!, 1f);
+        dc.DrawLine(new Vector2(x2, y + 2), new Vector2(x2, y + TargetBarH - 2), _brushBarBorder!, 1f);
 
         string label = $"{_target.Name}   {FormatDamage(_target.CurrentHp)} / {FormatDamage(_target.MaxHp)}   {pct * 100:0.#}%";
         var textLayout = _ctx!.DWriteFactory.CreateTextLayout(label, _fontSmall!, w, TargetBarH);
@@ -448,31 +459,39 @@ internal sealed class DpsCanvas : Control
             // Name — color based on server faction.
             var nameBrush = row.ServerId switch
             {
-                >= 1000 and < 2000 => _brushNameAsmo!,   // 마족: 하늘색
-                >= 2000 and < 3000 => _brushNameElyos!,  // 천족: 연보라
+                >= 1000 and < 2000 => _brushNameElyos!,  // 천족: 하늘색
+                >= 2000 and < 3000 => _brushNameAsmo!,   // 마족: 연보라
                 _ => _brushTextBright!,
             };
             string displayName = AnonymousMode && !string.IsNullOrEmpty(row.JobIconKey)
                 ? (string.IsNullOrEmpty(row.ServerName) ? row.JobIconKey : $"{row.JobIconKey}[{row.ServerName}]")
                 : row.Name;
             string nameText = row.CombatPower > 0 ? $"{displayName}  {row.CombatPower:N0}" : displayName;
-            dc.DrawText(nameText, _fontName!, new Rect(textLeft, y + 5, numW, 16), nameBrush,
+
+            // Name (left) + contribution % next to name
+            var nameLayout = _ctx!.DWriteFactory.CreateTextLayout(nameText, _fontName!, numW * 0.6f, 16);
+            dc.DrawTextLayout(new Vector2(textLeft, y + 5), nameLayout, nameBrush);
+            float nameWidth = nameLayout.Metrics.WidthIncludingTrailingWhitespace;
+            nameLayout.Dispose();
+
+            string contribText = $" {row.Percent * 100:0.#}%";
+            dc.DrawText(contribText, _fontSmall!, new Rect(textLeft + nameWidth, y + 6, 60, 14), _brushTextDim!,
                 DrawTextOptions.None, MeasuringMode.Natural);
 
-            // Damage total — gold color like original --gold
-            var totalTextLayout = _ctx!.DWriteFactory.CreateTextLayout(
-                FormatDamage(row.Damage), _fontNumber!, numW, 16);
-            totalTextLayout.TextAlignment = TextAlignment.Trailing;
-            dc.DrawTextLayout(new Vector2(textLeft, y + 4), totalTextLayout, _brushGold!);
-            totalTextLayout.Dispose();
-
-            // Secondary stats — text-secondary color
-            string secondary = $"{FormatDamage(row.DpsValue)}/s · {row.Percent * 100:0.#}% · crit {row.CritRate * 100:0}%";
-            var dpsLayout = _ctx.DWriteFactory.CreateTextLayout(
-                secondary, _fontSmall!, numW, 14);
+            // DPS — gold color, right-aligned
+            string dpsText = FormatDamage(row.DpsValue) + "/s";
+            var dpsLayout = _ctx.DWriteFactory.CreateTextLayout(dpsText, _fontNumber!, numW, 16);
             dpsLayout.TextAlignment = TextAlignment.Trailing;
-            dc.DrawTextLayout(new Vector2(textLeft, y + RowH - 14 - 2), dpsLayout, _brushTextDim!);
+            float dpsWidth = dpsLayout.Metrics.Width;
+            dc.DrawTextLayout(new Vector2(textLeft, y + 4), dpsLayout, _brushGold!);
             dpsLayout.Dispose();
+
+            // Total damage — dim, left of DPS
+            string totalText = FormatDamage(row.Damage);
+            var totalLayout = _ctx.DWriteFactory.CreateTextLayout(totalText, _fontSmall!, numW - dpsWidth - 6, 16);
+            totalLayout.TextAlignment = TextAlignment.Trailing;
+            dc.DrawTextLayout(new Vector2(textLeft, y + 6), totalLayout, _brushTextDim!);
+            totalLayout.Dispose();
 
             _rowHitAreas.Add((y, y + RowH, idx));
             y += RowH + RowGap;

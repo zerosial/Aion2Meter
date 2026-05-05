@@ -26,8 +26,8 @@ internal static class AutoUpdater
     public static Version CurrentVersion =>
         Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
 
-    /// Check only — returns (remoteVersion, downloadUrl) or null.
-    public static async Task<(Version Version, string Url)?> CheckAsync(Action<string>? log = null)
+    /// Check only — returns (remoteVersion, downloadUrl, releaseNotes) or null.
+    public static async Task<(Version Version, string Url, string Notes)?> CheckAsync(Action<string>? log = null)
     {
         try
         {

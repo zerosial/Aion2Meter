@@ -253,6 +253,24 @@ internal sealed class SettingsPanelForm : Form
         content.Controls.Add(ddNumFmt);
         y += 42;
 
+        // 3.6 Contribution % mode
+        content.Controls.Add(SectionLabel("기여도 표기", left, y));
+        y += 22;
+        var pctModeItems = new List<string> { "총 딜량 대비", "보스 최대체력 대비" };
+        int pctModeIdx = string.Equals(settings.DpsPercentMode, "boss", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        var ddPctMode = new DarkDropdown(pctModeItems, pctModeIdx)
+        {
+            Location = new Point(left, y), Width = 180,
+        };
+        ddPctMode.SelectionChanged += idx =>
+        {
+            settings.DpsPercentMode = idx == 1 ? "boss" : "party";
+            settings.SaveDebounced();
+            SettingsChanged?.Invoke();
+        };
+        content.Controls.Add(ddPctMode);
+        y += 42;
+
         // 4. GPU
         var chkGpu = StyledCheckBox("GPU 가속 사용", left, y,
             string.Equals(settings.GpuMode, "on", StringComparison.OrdinalIgnoreCase));
@@ -275,6 +293,19 @@ internal sealed class SettingsPanelForm : Form
         });
         y += 34;
 
+        // 4.5 Overlay only when Aion 2
+        var chkAionOnly = StyledCheckBox("아이온2 활성화 시에만 오버레이 표시", left, y, settings.OverlayOnlyWhenAion);
+        chkAionOnly.CheckedChanged += (_, _) =>
+        {
+            settings.OverlayOnlyWhenAion = chkAionOnly.Checked;
+            settings.SaveDebounced();
+            // Notify the overlay form via owner.
+            if (Owner is OverlayForm overlay)
+                overlay.SetOverlayOnlyWhenAion(chkAionOnly.Checked);
+        };
+        content.Controls.Add(chkAionOnly);
+        y += 34;
+
         // ─── 5. Shortcuts ─────────────────────────────────
         content.Controls.Add(SectionLabel("단축키", left, y));
         y += 22;
@@ -283,6 +314,7 @@ internal sealed class SettingsPanelForm : Form
         y = AddShortcutRow(content, "리셋", shortcuts.Reset, left, y, v => { shortcuts.Reset = v; settings.SaveDebounced(); });
         y = AddShortcutRow(content, "프로그램 재시작", shortcuts.Restart, left, y, v => { shortcuts.Restart = v; settings.SaveDebounced(); });
         y = AddShortcutRow(content, "익명 모드", shortcuts.Anonymous, left, y, v => { shortcuts.Anonymous = v; settings.SaveDebounced(); });
+        y = AddShortcutRow(content, "컴팩트 모드", shortcuts.Compact, left, y, v => { shortcuts.Compact = v; settings.SaveDebounced(); });
 
         y += 10;
         content.Size = new Size(ClientSize.Width, y);

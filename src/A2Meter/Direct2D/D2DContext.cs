@@ -68,7 +68,6 @@ internal sealed class D2DContext : IDisposable
 
         if (device == null)
         {
-            // Fallback to WARP software renderer.
             D3D11.D3D11.D3D11CreateDevice(
                 adapter: null,
                 DriverType.Warp,

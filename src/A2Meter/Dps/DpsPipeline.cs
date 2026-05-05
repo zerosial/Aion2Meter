@@ -384,11 +384,19 @@ internal sealed class DpsPipeline : IDisposable
             long peak = _peakByActor.TryGetValue(p.EntityId, out var pk) ? pk : p.Dps;
             long avg  = elapsedSec > 0 ? (long)(p.TotalDamage / elapsedSec) : p.Dps;
 
+            // Contribution %: "boss" mode uses boss MaxHp as denominator, "party" uses total party damage.
+            double pct = p.DamagePercent;
+            if (string.Equals(Core.AppSettings.Instance.DpsPercentMode, "boss", StringComparison.OrdinalIgnoreCase)
+                && _currentTarget is { IsBoss: true, MaxHp: > 0 })
+            {
+                pct = (double)p.TotalDamage / _currentTarget.MaxHp;
+            }
+
             rows.Add(new DpsCanvas.PlayerRow(
                 Name:        p.Name,
                 JobIconKey:  JobCodeToKey(p.JobCode),
                 Damage:      p.TotalDamage,
-                Percent:     p.DamagePercent,
+                Percent:     pct,
                 DpsValue:    p.Dps,
                 CritRate:    p.CritRate,
                 HealTotal:   p.HealTotal,
