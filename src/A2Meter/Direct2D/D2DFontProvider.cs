@@ -4,10 +4,8 @@ using DwFontStyle = Vortice.DirectWrite.FontStyle;
 
 namespace A2Meter.Direct2D;
 
-/// Picks the first installed font family from a priority list.
-/// Web assets ship .woff2 files, but DirectWrite only consumes OpenType (TTF/OTF).
-/// Decoding woff2 (Brotli + SFNT container) into an in-memory IDWriteFontCollection
-/// is a separate, larger task; until then we rely on what the user has installed.
+/// Font provider for DirectWrite. Uses IDWriteFontCollection to enumerate
+/// system fonts by family name, separate from weight selection.
 internal sealed class D2DFontProvider
 {
     private readonly IDWriteFactory _factory;
@@ -19,33 +17,44 @@ internal sealed class D2DFontProvider
         _system  = factory.GetSystemFontCollection(false);
     }
 
-    /// Returns a TextFormat using the first installed family in `candidates`.
-    /// Falls back to "Segoe UI" if none are present.
-    public IDWriteTextFormat CreateTextFormat(
-        string[] candidates,
-        FontWeight weight,
-        DwFontStyle style,
-        float size)
+    /// Creates a TextFormat with the specified family, weight, and size.
+    public IDWriteTextFormat Create(string family, FontWeight weight, float size)
     {
-        var family = ResolveFirstAvailable(candidates) ?? "Segoe UI";
-        return _factory.CreateTextFormat(family, weight, style, size);
+        // Verify family exists; fallback to Malgun Gothic → Segoe UI.
+        string resolved = Resolve(family) ?? Resolve("Malgun Gothic") ?? "Segoe UI";
+        return _factory.CreateTextFormat(resolved, weight, DwFontStyle.Normal, size);
     }
 
-    /// Common A2Power Korean UI font stack: Gmarket Sans → LINE Seed Sans KR → Malgun Gothic.
-    public IDWriteTextFormat CreateUiName(float size, FontWeight weight = FontWeight.SemiBold)
-        => CreateTextFormat(new[] { "Gmarket Sans", "LINE Seed Sans KR", "Malgun Gothic" }, weight, DwFontStyle.Normal, size);
-
-    /// Numeric/monospace stack (matches original `Orbit, Consolas, monospace`).
-    public IDWriteTextFormat CreateNumeric(float size, FontWeight weight = FontWeight.Bold)
-        => CreateTextFormat(new[] { "Orbit", "Consolas", "Cascadia Mono" }, weight, DwFontStyle.Normal, size);
-
-    private string? ResolveFirstAvailable(string[] families)
+    /// UI font shorthand using AppSettings values.
+    public IDWriteTextFormat CreateUi(float size, string? userFont = null, FontWeight? weightOverride = null)
     {
-        foreach (var name in families)
+        var s = Core.AppSettings.Instance;
+        string family = userFont ?? s.FontName;
+        var weight = weightOverride ?? (FontWeight)s.FontWeight;
+        return Create(family, weight, size);
+    }
+
+    /// Get all DirectWrite font family names for the settings UI.
+    public string[] GetFamilyNames()
+    {
+        int count = (int)_system.FontFamilyCount;
+        var names = new string[count];
+        for (int i = 0; i < count; i++)
         {
-            _system.FindFamilyName(name, out uint index);
-            if (index != uint.MaxValue) return name;
+            using var fam = _system.GetFontFamily((uint)i);
+            using var locNames = fam.FamilyNames;
+            // Prefer en-us, fallback to index 0.
+            locNames.FindLocaleName("en-us", out uint nameIdx);
+            if (nameIdx == uint.MaxValue) nameIdx = 0;
+            names[i] = locNames.GetString(nameIdx);
         }
-        return null;
+        Array.Sort(names, StringComparer.OrdinalIgnoreCase);
+        return names;
+    }
+
+    private string? Resolve(string family)
+    {
+        _system.FindFamilyName(family, out uint index);
+        return index != uint.MaxValue ? family : null;
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using A2Meter.Core;
 using A2Meter.Direct2D;
@@ -33,6 +34,7 @@ internal static class Program
             if (!createdNew) return;
         }
 
+        // ── WinForms + D2D mode (default) ──
         ApplicationConfiguration.Initialize();
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
@@ -54,6 +56,21 @@ internal static class Program
             var hk = new HotkeyManager(overlay);
             overlay.Hotkeys = hk;
             hk.RegisterFromSettings(settings.Shortcuts);
+
+            // Auto-update check — show toast if available.
+            _ = Task.Run(async () =>
+            {
+                var result = await AutoUpdater.CheckAsync(msg => Console.Error.WriteLine(msg));
+                if (result.HasValue)
+                {
+                    var (ver, url) = result.Value;
+                    overlay.Invoke(() =>
+                    {
+                        var toast = new Forms.UpdateToastForm(overlay, ver, url);
+                        toast.Show();
+                    });
+                }
+            });
         };
 
         using var tray = new TrayManager(
@@ -149,7 +166,7 @@ internal static class Program
     }
 
     /// CLI:
-    ///   A2Meter                                    # live capture (Npcap required)
+    ///   A2Meter                                    # live capture
     ///   A2Meter --replay <session-dir>             # offline replay, realtime
     ///   A2Meter --replay <dir> --speed 4           # replay 4x faster
     ///   A2Meter --replay <dir> --fast              # replay as fast as possible

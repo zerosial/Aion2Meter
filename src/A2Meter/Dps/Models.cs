@@ -41,6 +41,7 @@ internal sealed class SkillDps
     public string Name { get; set; } = "";
     public long   Total { get; set; }
     public long   Hits { get; set; }
+    public long   MaxHit { get; set; }
     public double CritRate { get; set; }
     public double BackRate { get; set; }      // 후방
     public double StrongRate { get; set; }    // 강타
@@ -73,4 +74,9 @@ internal sealed class PartyMember
     public string JobName { get; set; } = "";
     public int    Level { get; set; }
     public int    CombatPower { get; set; }
+    /// True when this member is the local player (from UserInfo isSelf=1).
+    public bool   IsSelf { get; set; }
+    /// True when confirmed via actual party packet (PartyList/PartyUpdate/PartyAccept),
+    /// not just seen nearby via UserInfo.
+    public bool   IsPartyMember { get; set; }
 }

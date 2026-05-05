@@ -17,11 +17,13 @@ internal sealed class PacketSniffer : IPacketSource, IInternalEventRaise
     void IInternalEventRaise.RaiseCombatHit(CombatHitArgs args) => CombatHit?.Invoke(args);
     void IInternalEventRaise.RaiseTargetChanged(MobTarget? t)   => TargetChanged?.Invoke(t);
     void IInternalEventRaise.RaisePartyMemberSeen(PartyMember m) => PartyMemberSeen?.Invoke(m);
+    void IInternalEventRaise.RaisePartyLeft() => PartyLeft?.Invoke();
 
     public event Action<TcpSegment>? SegmentReceived;
     public event Action<CombatHitArgs>? CombatHit;
     public event Action<MobTarget?>? TargetChanged;
     public event Action<PartyMember>? PartyMemberSeen;
+    public event Action? PartyLeft;
 
     public bool IsRunning { get; private set; }
 

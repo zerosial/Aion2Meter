@@ -30,6 +30,7 @@ internal interface IPacketSource : IDisposable
     event Action<CombatHitArgs>? CombatHit;
     event Action<MobTarget?>? TargetChanged;
     event Action<PartyMember>? PartyMemberSeen;
+    event Action? PartyLeft;
 
     void Start();
     void Stop();

@@ -93,6 +93,8 @@ internal sealed class ProtocolPipeline : IDisposable
         _party.PartyUpdate  += OnPartyRoster;
         _party.PartyAccept  += OnPartyMember;
         _party.PartyRequest += OnPartyMember;
+        _party.PartyLeft    += OnPartyLeft;
+        _party.PartyEjected += OnPartyLeft;
         _party.CombatPowerDetected += OnPartyCpByName;
     }
 
@@ -162,7 +164,9 @@ internal sealed class ProtocolPipeline : IDisposable
             CharacterId = (uint)entityId,
             Nickname    = nickname,
             ServerId    = serverId,
+            ServerName  = ServerMap.GetName(serverId),
             JobCode     = jobCode,
+            IsSelf      = isSelf == 1,
         });
     }
 
@@ -206,11 +210,18 @@ internal sealed class ProtocolPipeline : IDisposable
 
     private void OnPartyMember(PartyMember m)
     {
+        m.IsPartyMember = true;
         if (m.CharacterId != 0)
         {
             _identities[(int)m.CharacterId] = (m.Nickname, m.JobCode);
         }
         TriggerPartyMemberSeen(m);
+    }
+
+    private void OnPartyLeft()
+    {
+        // Signal that the party has disbanded — downstream clears party flags.
+        (_source as IInternalEventRaise)?.RaisePartyLeft();
     }
 
     /// CP-by-name doesn't carry an entityId. Best we can do is enrich any future
@@ -268,4 +279,5 @@ internal interface IInternalEventRaise
     void RaiseCombatHit(CombatHitArgs args);
     void RaiseTargetChanged(MobTarget? target);
     void RaisePartyMemberSeen(PartyMember member);
+    void RaisePartyLeft();
 }

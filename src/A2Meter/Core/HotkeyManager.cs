@@ -31,10 +31,9 @@ internal sealed class HotkeyManager : IDisposable
     public void RegisterFromSettings(ShortcutSettings shortcuts)
     {
         UnregisterAll();
-        TryRegister(shortcuts.Toggle,    () => _form.ToggleVisibility());
-        TryRegister(shortcuts.Refresh,   () => _form.TriggerClearShortcut());
-        TryRegister(shortcuts.Compact,   () => _form.ToggleCompact());
-        TryRegister(shortcuts.SwitchTab, () => _form.TriggerSwitchTab());
+        TryRegister(shortcuts.Reset,     () => _form.TriggerClearShortcut());
+        TryRegister(shortcuts.Restart,   () => _form.TriggerRestart());
+        TryRegister(shortcuts.Anonymous, () => _form.TriggerAnonymousToggle());
     }
 
     public void Suspend()

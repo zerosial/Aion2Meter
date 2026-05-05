@@ -33,7 +33,9 @@ internal sealed class DpsCanvas : Control
         int            CombatPower = 0,
         long           PeakDps = 0,
         long           AvgDps = 0,
-        long           DotDamage = 0);
+        long           DotDamage = 0,
+        int            ServerId = 0,
+        string         ServerName = "");
 
     public sealed record SkillBar(
         string Name,
@@ -47,6 +49,7 @@ internal sealed class DpsCanvas : Control
         double MultiHitRate  = 0,
         double DodgeRate     = 0,
         double BlockRate     = 0,
+        long   MaxHit        = 0,
         int[]? Specs         = null);
 
     public sealed record TargetInfo(string Name, long CurrentHp, long MaxHp);
@@ -64,17 +67,21 @@ internal sealed class DpsCanvas : Control
     private const float PadBottom    = 6f;
     private const float HeaderHeight = 28f;
     private const float TargetBarH   = 20f;
-    private const float RowH         = 30f;
     private const float RowGap       = 3f;
     private const float BarRadius    = 5f;
     private const float IconSize     = 22f;
+
+    private float RowH => 30f * Core.AppSettings.Instance.RowHeight / 90f;
     private D2DContext? _ctx;
     private D2DFontProvider? _fonts;
     private JobIconAtlas? _icons;
     private ID2D1SolidColorBrush? _brushBarBg;
     private ID2D1SolidColorBrush? _brushBarFill;
+    private ID2D1SolidColorBrush? _brushBarBorder;
     private ID2D1SolidColorBrush? _brushText;
+    private ID2D1SolidColorBrush? _brushTextBright;
     private ID2D1SolidColorBrush? _brushTextDim;
+    private ID2D1SolidColorBrush? _brushGold;
     private ID2D1SolidColorBrush? _brushAccent;
     private IDWriteTextFormat? _fontName;
     private IDWriteTextFormat? _fontNumber;
@@ -89,9 +96,22 @@ internal sealed class DpsCanvas : Control
     private SessionSummary? _summary;
     private ID2D1SolidColorBrush? _brushHpBg;
     private ID2D1SolidColorBrush? _brushHpFill;
+    private ID2D1SolidColorBrush? _brushNameAsmo;   // 마족 (1xxx) 하늘색
+    private ID2D1SolidColorBrush? _brushNameElyos;  // 천족 (2xxx) 연보라
 
     /// Fired when the user clicks a player row. Passes the clicked PlayerRow.
     public event Action<PlayerRow>? PlayerRowClicked;
+
+    /// Fired when the user clicks the countdown timer button.
+    public event Action? CountdownClicked;
+
+    /// Countdown display: 0 = off, >0 = limit in seconds. Set by pipeline.
+    public int CountdownSec { get; set; }
+    /// Whether countdown has expired (shows frozen state).
+    public bool CountdownExpired { get; set; }
+
+    /// When true, show "직업명[서버명]" instead of nickname.
+    public bool AnonymousMode { get; set; }
 
     public DpsCanvas()
     {
@@ -99,7 +119,7 @@ internal sealed class DpsCanvas : Control
                | ControlStyles.Opaque
                | ControlStyles.UserPaint, true);
         DoubleBuffered = false;
-        BackColor = DrawColor.FromArgb(8, 11, 20);
+        BackColor = Core.AppSettings.Instance.Theme.BgColor;
 
         MouseMove += OnEdgeMouseMove;
         MouseDown += OnEdgeMouseDown;
@@ -190,24 +210,72 @@ internal sealed class DpsCanvas : Control
     private void InitD2D()
     {
         if (DesignMode || Width <= 0 || Height <= 0) return;
-        _ctx = new D2DContext(Handle, ClientSize.Width, ClientSize.Height);
+        bool warp = string.Equals(Core.AppSettings.Instance.GpuMode, "off", StringComparison.OrdinalIgnoreCase);
+        _ctx = new D2DContext(Handle, ClientSize.Width, ClientSize.Height, forceWarp: warp);
 
         var dc = _ctx.DC;
-        _brushBarBg   = dc.CreateSolidColorBrush(new D2DColor(0.10f, 0.13f, 0.20f, 1.00f));
-        _brushBarFill = dc.CreateSolidColorBrush(new D2DColor(0.44f, 0.78f, 1.00f, 1.00f));
-        _brushText    = dc.CreateSolidColorBrush(new D2DColor(0.97f, 0.98f, 1.00f, 1.00f));
-        _brushTextDim = dc.CreateSolidColorBrush(new D2DColor(0.65f, 0.72f, 0.82f, 1.00f));
-        _brushAccent  = dc.CreateSolidColorBrush(new D2DColor(0.44f, 0.78f, 1.00f, 1.00f));
-        _brushHpBg    = dc.CreateSolidColorBrush(new D2DColor(0.20f, 0.07f, 0.10f, 1.00f));
-        _brushHpFill  = dc.CreateSolidColorBrush(new D2DColor(0.85f, 0.20f, 0.25f, 1.00f));
+        _brushBarBg    = dc.CreateSolidColorBrush(new D2DColor(0.078f, 0.098f, 0.157f, 0.60f)); // #141928 @ 60%
+        _brushBarFill  = dc.CreateSolidColorBrush(new D2DColor(0.44f, 0.78f, 1.00f, 1.00f));
+        _brushBarBorder= dc.CreateSolidColorBrush(new D2DColor(1f, 1f, 1f, 0.07f));
+        _brushText     = dc.CreateSolidColorBrush(new D2DColor(0.93f, 0.95f, 1.00f, 1.00f)); // --text-primary
+        _brushTextBright = dc.CreateSolidColorBrush(new D2DColor(1f, 1f, 1f, 1f));            // --text-bright #fff
+        _brushTextDim  = dc.CreateSolidColorBrush(new D2DColor(0.635f, 0.694f, 0.784f, 1f));  // --text-secondary #a2b1c8
+        _brushGold     = dc.CreateSolidColorBrush(new D2DColor(1f, 0.82f, 0.40f, 1f));        // --gold #ffd166
+        _brushAccent   = dc.CreateSolidColorBrush(new D2DColor(0.455f, 0.753f, 0.988f, 1f));  // --accent #74c0fc
+        _brushHpBg     = dc.CreateSolidColorBrush(new D2DColor(0.20f, 0.07f, 0.10f, 1.00f));
+        _brushHpFill   = dc.CreateSolidColorBrush(new D2DColor(0.85f, 0.20f, 0.25f, 1.00f));
+        _brushNameAsmo  = dc.CreateSolidColorBrush(new D2DColor(0.55f, 0.82f, 1.00f, 1f));  // 하늘색
+        _brushNameElyos = dc.CreateSolidColorBrush(new D2DColor(0.76f, 0.65f, 1.00f, 1f));  // 연보라
+
+        ApplyThemeBrushes();
 
         _fonts = new D2DFontProvider(_ctx.DWriteFactory);
-        _fontName   = _fonts.CreateUiName(13f);
-        _fontNumber = _fonts.CreateNumeric(13f);
-        _fontSmall  = _fonts.CreateUiName(10f, FontWeight.Normal);
-        _fontTotal  = _fonts.CreateNumeric(15f);
+        RebuildFonts();
 
         _icons = new JobIconAtlas(dc);
+    }
+
+    private static D2DColor ColorToD2D(System.Drawing.Color c)
+        => new(c.R / 255f, c.G / 255f, c.B / 255f, 1f);
+
+    private void ApplyThemeBrushes()
+    {
+        var t = Core.AppSettings.Instance.Theme;
+        if (_brushBarBg != null)   _brushBarBg.Color   = ColorToD2D(t.HeaderColor);
+        if (_brushText != null)    _brushText.Color    = ColorToD2D(t.TextColor);
+        if (_brushTextDim != null)  _brushTextDim.Color = ColorToD2D(t.TextDimColor);
+        if (_brushAccent != null)   _brushAccent.Color  = ColorToD2D(t.AccentColor);
+    }
+
+    /// Rebuild fonts and theme colors from current AppSettings.
+    public void ApplySettings()
+    {
+        if (_fonts == null) return;
+        DisposeFonts();
+        RebuildFonts();
+        ApplyThemeBrushes();
+        // Update the GDI BackColor (visible behind D2D if control isn't fully covered).
+        BackColor = Core.AppSettings.Instance.Theme.BgColor;
+        Invalidate();
+    }
+
+    private void RebuildFonts()
+    {
+        if (_fonts == null) return;
+        var s = Core.AppSettings.Instance;
+        float baseSize = s.FontSize * s.FontScale / 100f;
+        _fontName   = _fonts.CreateUi(baseSize + 4f);
+        _fontNumber = _fonts.CreateUi(baseSize + 4f);
+        _fontSmall  = _fonts.CreateUi(baseSize + 1f);
+        _fontTotal  = _fonts.CreateUi(baseSize + 6f);
+    }
+
+    private void DisposeFonts()
+    {
+        _fontTotal?.Dispose(); _fontTotal = null;
+        _fontSmall?.Dispose(); _fontSmall = null;
+        _fontNumber?.Dispose(); _fontNumber = null;
+        _fontName?.Dispose(); _fontName = null;
     }
 
     private void DisposeD2D()
@@ -217,11 +285,16 @@ internal sealed class DpsCanvas : Control
         _fontSmall?.Dispose();
         _fontNumber?.Dispose();
         _fontName?.Dispose();
+        _brushNameElyos?.Dispose();
+        _brushNameAsmo?.Dispose();
         _brushHpFill?.Dispose();
         _brushHpBg?.Dispose();
         _brushAccent?.Dispose();
+        _brushGold?.Dispose();
         _brushTextDim?.Dispose();
+        _brushTextBright?.Dispose();
         _brushText?.Dispose();
+        _brushBarBorder?.Dispose();
         _brushBarFill?.Dispose();
         _brushBarBg?.Dispose();
         _ctx?.Dispose();
@@ -236,7 +309,7 @@ internal sealed class DpsCanvas : Control
         var dc = _ctx.DC;
 
         dc.BeginDraw();
-        dc.Clear(new D2DColor(0.031f, 0.043f, 0.078f, 1.00f));
+        dc.Clear(ColorToD2D(Core.AppSettings.Instance.Theme.BgColor));
 
         float y = 6f;
         y = DrawHeader(dc, y);
@@ -252,8 +325,18 @@ internal sealed class DpsCanvas : Control
         float w = ClientSize.Width - PadX * 2;
 
         // Rect = (x, y, width, height)
-        dc.DrawText(_timerText, _fontTotal!, new Rect(PadX, y, 120f, HeaderHeight), _brushText!,
+        dc.DrawText(_timerText, _fontTotal!, new Rect(PadX, y, 60f, HeaderHeight), _brushText!,
             DrawTextOptions.None, MeasuringMode.Natural);
+
+        // Countdown badge (clickable area: 70~150)
+        {
+            string badge = CountdownSec <= 0 ? "⏱off"
+                         : CountdownExpired  ? $"⏱{CountdownSec}s ■"
+                         :                     $"⏱{CountdownSec}s";
+            var badgeBrush = CountdownExpired ? _brushGold! : _brushTextDim!;
+            dc.DrawText(badge, _fontSmall!, new Rect(66f, y + 2f, 80f, HeaderHeight - 2f), badgeBrush,
+                DrawTextOptions.None, MeasuringMode.Natural);
+        }
 
         var totalLayout = _ctx!.DWriteFactory.CreateTextLayout(
             FormatDamage(_totalDamage), _fontTotal!, w, HeaderHeight);
@@ -335,17 +418,19 @@ internal sealed class DpsCanvas : Control
             }
 
             // Background track.  Rect(x, y, width, height)
-            dc.FillRoundedRectangle(new RoundedRectangle
+            var barRect = new RoundedRectangle
             {
                 Rect = new Rect(barLeft, y, barW, RowH),
                 RadiusX = BarRadius, RadiusY = BarRadius
-            }, _brushBarBg!);
+            };
+            dc.FillRoundedRectangle(barRect, _brushBarBg!);
 
             // Accent fill — relative to top player (top = 100%).
+            // Original uses opacity 0.35 for the bar fill to keep it subtle.
             float fillW = (float)Math.Clamp((double)row.Damage / maxDamage, 0, 1) * barW;
             if (fillW > 1)
             {
-                _brushBarFill!.Color = new D2DColor(row.AccentColor.R, row.AccentColor.G, row.AccentColor.B, 0.90f);
+                _brushBarFill!.Color = new D2DColor(row.AccentColor.R, row.AccentColor.G, row.AccentColor.B, 0.35f);
                 dc.FillRoundedRectangle(new RoundedRectangle
                 {
                     Rect = new Rect(barLeft, y, fillW, RowH),
@@ -353,21 +438,36 @@ internal sealed class DpsCanvas : Control
                 }, _brushBarFill);
             }
 
+            // Subtle border (rgba(255,255,255,.07))
+            dc.DrawRoundedRectangle(barRect, _brushBarBorder!);
+
             // Text content.
             float textLeft = barLeft + 8f;
             float numW     = barW - 16f;
 
-            dc.DrawText(row.Name, _fontName!, new Rect(textLeft, y + 5, numW, 16), _brushText!,
+            // Name — color based on server faction.
+            var nameBrush = row.ServerId switch
+            {
+                >= 1000 and < 2000 => _brushNameAsmo!,   // 마족: 하늘색
+                >= 2000 and < 3000 => _brushNameElyos!,  // 천족: 연보라
+                _ => _brushTextBright!,
+            };
+            string displayName = AnonymousMode && !string.IsNullOrEmpty(row.JobIconKey)
+                ? (string.IsNullOrEmpty(row.ServerName) ? row.JobIconKey : $"{row.JobIconKey}[{row.ServerName}]")
+                : row.Name;
+            string nameText = row.CombatPower > 0 ? $"{displayName}  {row.CombatPower:N0}" : displayName;
+            dc.DrawText(nameText, _fontName!, new Rect(textLeft, y + 5, numW, 16), nameBrush,
                 DrawTextOptions.None, MeasuringMode.Natural);
 
+            // Damage total — gold color like original --gold
             var totalTextLayout = _ctx!.DWriteFactory.CreateTextLayout(
                 FormatDamage(row.Damage), _fontNumber!, numW, 16);
             totalTextLayout.TextAlignment = TextAlignment.Trailing;
-            dc.DrawTextLayout(new Vector2(textLeft, y + 4), totalTextLayout, _brushText!);
+            dc.DrawTextLayout(new Vector2(textLeft, y + 4), totalTextLayout, _brushGold!);
             totalTextLayout.Dispose();
 
+            // Secondary stats — text-secondary color
             string secondary = $"{FormatDamage(row.DpsValue)}/s · {row.Percent * 100:0.#}% · crit {row.CritRate * 100:0}%";
-            if (row.HealTotal > 0) secondary += $" · heal {FormatDamage(row.HealTotal)}";
             var dpsLayout = _ctx.DWriteFactory.CreateTextLayout(
                 secondary, _fontSmall!, numW, 14);
             dpsLayout.TextAlignment = TextAlignment.Trailing;
@@ -398,7 +498,16 @@ internal sealed class DpsCanvas : Control
     private void OnPlayerRowClick(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Left) return;
+        float clickX = e.Location.X;
         float clickY = e.Location.Y;
+
+        // Countdown button hit area: in the header row, right after timer text.
+        if (clickY >= 6f && clickY < 6f + HeaderHeight && clickX >= 70f && clickX < 150f)
+        {
+            CountdownClicked?.Invoke();
+            return;
+        }
+
         foreach (var (top, bottom, i) in _rowHitAreas)
         {
             if (clickY >= top && clickY < bottom && i < _rows.Count)
@@ -454,6 +563,8 @@ internal sealed class DpsCanvas : Control
 
     private static string FormatDamage(long v)
     {
+        if (Core.AppSettings.Instance.NumberFormat == "full")
+            return v.ToString("N0");
         if (v >= 1_000_000_000) return (v / 1_000_000_000d).ToString("0.##") + "B";
         if (v >= 1_000_000)     return (v / 1_000_000d).ToString("0.##") + "M";
         if (v >= 1_000)         return (v / 1_000d).ToString("0.#") + "K";

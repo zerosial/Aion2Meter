@@ -17,7 +17,7 @@ namespace A2Meter.Forms;
 internal sealed class OverlayForm : Form
 {
     private const int HeaderHeight = 36;
-    private const int ResizeMargin = 6;
+    private const int ResizeMargin = 10;
 
     private readonly OverlayHeaderPanel _header;
     private readonly DpsCanvas _dps;
@@ -35,6 +35,7 @@ internal sealed class OverlayForm : Form
     private bool _locked;          // when locked, click-through + ignore drag/resize
     private bool _compactMode;
     private bool _appCloseRequested;
+    private bool _loaded;          // true after Load — prevents saving during init
 
     public HotkeyManager? Hotkeys { get; set; }
     public SecondaryWindows Windows { get; }
@@ -42,6 +43,7 @@ internal sealed class OverlayForm : Form
 
     private void PersistWindowState()
     {
+        if (!_loaded) return;
         if (WindowState != FormWindowState.Normal) return;
         var s = AppSettings.Instance;
         s.WindowState.X = Location.X;
@@ -51,8 +53,9 @@ internal sealed class OverlayForm : Form
         s.SaveDebounced();
     }
 
-    protected override void OnMove(EventArgs e)   { base.OnMove(e);   PersistWindowState(); }
-    protected override void OnResizeEnd(EventArgs e){ base.OnResizeEnd(e); PersistWindowState(); }
+    protected override void OnMove(EventArgs e)      { base.OnMove(e);      PersistWindowState(); }
+    protected override void OnResize(EventArgs e)    { base.OnResize(e);    PersistWindowState(); }
+    protected override void OnResizeEnd(EventArgs e) { base.OnResizeEnd(e); PersistWindowState(); }
 
     public OverlayForm()
     {
@@ -68,14 +71,16 @@ internal sealed class OverlayForm : Form
         int wantW = ws.Width  >= MinimumSize.Width  ? ws.Width  : 460;
         int wantH = ws.Height >= MinimumSize.Height ? ws.Height : 500;
         Size = new Size(wantW, wantH);
-        BackColor = Color.FromArgb(8, 11, 20);
+        BackColor = AppSettings.Instance.Theme.BgColor;
         Windows = new SecondaryWindows(this);
 
         _header = new OverlayHeaderPanel();
-        _header.LockToggled    += SetLocked;
-        _header.HistoryClicked += OpenHistory;
-        _header.OpacityChanged += OnOpacitySlider;
-        _header.CloseClicked   += RequestAppClose;
+        _header.LockToggled      += SetLocked;
+        _header.AnonymousToggled += anon => { _dps.AnonymousMode = anon; _dps.Invalidate(); };
+        _header.HistoryClicked   += OpenHistory;
+        _header.SettingsClicked  += OpenSettings;
+        _header.OpacityChanged   += OnOpacitySlider;
+        _header.CloseClicked     += RequestAppClose;
 
         _dps = new DpsCanvas { Dock = DockStyle.Fill };
         _dps.PlayerRowClicked += row =>
@@ -83,11 +88,12 @@ internal sealed class OverlayForm : Form
             var detail = Windows.Open<DpsDetailForm>();
             detail.SetData(row);
         };
+        _dps.CountdownClicked += OnCountdownClicked;
 
         Controls.Add(_dps);
         Controls.Add(_header);
 
-        Load += (_, _) => InitOverlay();
+        Load += (_, _) => { _loaded = true; InitOverlay(); };
     }
 
     protected override CreateParams CreateParams
@@ -125,6 +131,7 @@ internal sealed class OverlayForm : Form
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
+        _lockBtn?.Close();
         _pipeline?.Dispose();
         _protocol?.Dispose();
         base.OnFormClosed(e);
@@ -159,12 +166,27 @@ internal sealed class OverlayForm : Form
         });
     }
 
+    private void OpenSettings()
+    {
+        var form = Windows.Open<SettingsPanelForm>();
+        form.SettingsChanged += () =>
+        {
+            _dps.ApplySettings();
+            var t = AppSettings.Instance.Theme;
+            BackColor = t.BgColor;
+            _header.BackColor = t.HeaderColor;
+            _header.Invalidate();
+        };
+    }
+
     private void OnOpacitySlider(int value)
     {
         AppSettings.Instance.Opacity = value;
         AppSettings.Instance.SaveDebounced();
         ApplyOpacity();
     }
+
+    private LockButtonForm? _lockBtn;
 
     private void SetLocked(bool locked)
     {
@@ -173,12 +195,24 @@ internal sealed class OverlayForm : Form
         if (locked) ex |=  Win32Native.WS_EX_TRANSPARENT;
         else        ex &= ~Win32Native.WS_EX_TRANSPARENT;
         Win32Native.SetWindowLong(Handle, Win32Native.GWL_EXSTYLE, ex);
+
+        if (locked)
+        {
+            _lockBtn ??= new LockButtonForm(this);
+            _lockBtn.PlaceNear(this);
+            _lockBtn.Show();
+        }
+        else
+        {
+            _lockBtn?.Hide();
+        }
     }
 
     public void Unlock()
     {
         SetLocked(false);
         _header.ForceUnlock();
+        _lockBtn?.Hide();
     }
 
     public void ShowOverlay()
@@ -204,6 +238,30 @@ internal sealed class OverlayForm : Form
     public void TriggerClearShortcut()  => _pipeline?.Reset();
     public void TriggerSwitchTab()      { /* compact/full toggle is the only "tab" we have */ }
 
+    public void TriggerRestart()
+    {
+        var exe = Environment.ProcessPath;
+        if (!string.IsNullOrEmpty(exe))
+            System.Diagnostics.Process.Start(exe);
+        Environment.Exit(0);
+    }
+
+    public void TriggerAnonymousToggle()
+    {
+        _dps.AnonymousMode = !_dps.AnonymousMode;
+        _header.SetAnonymous(_dps.AnonymousMode);
+        _dps.Invalidate();
+    }
+
+    private void OnCountdownClicked()
+    {
+        if (_pipeline == null) return;
+        _pipeline.CycleCountdown();
+        _dps.CountdownSec = _pipeline.CountdownSeconds;
+        _dps.CountdownExpired = _pipeline.CountdownExpired;
+        _dps.Invalidate();
+    }
+
     public void RequestAppClose()
     {
         _appCloseRequested = true;
@@ -222,7 +280,8 @@ internal sealed class OverlayForm : Form
 
         if (m.Msg == Win32Native.WM_NCHITTEST && !_locked)
         {
-            var screenPt = new Point(m.LParam.ToInt32());
+            int lp = unchecked((int)(long)m.LParam);
+            var screenPt = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
             var pt = PointToClient(screenPt);
 
             int hit = HitTestEdges(pt);

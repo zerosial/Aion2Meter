@@ -28,7 +28,10 @@ internal sealed class D2DContext : IDisposable
     private int _width;
     private int _height;
 
-    public D2DContext(IntPtr hwnd, int width, int height)
+    /// True if using WARP (software) renderer instead of hardware GPU.
+    public bool IsWarp { get; private set; }
+
+    public D2DContext(IntPtr hwnd, int width, int height, bool forceWarp = false)
     {
         _hwnd   = hwnd;
         _width  = Math.Max(1, width);
@@ -37,25 +40,43 @@ internal sealed class D2DContext : IDisposable
         D2DFactory    = D2D.D2D1.D2D1CreateFactory<ID2D1Factory1>(D2D.FactoryType.SingleThreaded);
         DWriteFactory = DW.DWrite.DWriteCreateFactory<IDWriteFactory>(DW.FactoryType.Shared);
 
-        CreateDeviceAndSwapChain();
+        CreateDeviceAndSwapChain(forceWarp);
     }
 
-    private void CreateDeviceAndSwapChain()
+    private void CreateDeviceAndSwapChain(bool forceWarp)
     {
         var creationFlags = DeviceCreationFlags.BgraSupport;
+        var featureLevels = new[]
+        {
+            Vortice.Direct3D.FeatureLevel.Level_11_1,
+            Vortice.Direct3D.FeatureLevel.Level_11_0,
+            Vortice.Direct3D.FeatureLevel.Level_10_1,
+            Vortice.Direct3D.FeatureLevel.Level_10_0,
+        };
 
-        D3D11.D3D11.D3D11CreateDevice(
-            adapter: null,
-            DriverType.Hardware,
-            creationFlags,
-            new[]
-            {
-                Vortice.Direct3D.FeatureLevel.Level_11_1,
-                Vortice.Direct3D.FeatureLevel.Level_11_0,
-                Vortice.Direct3D.FeatureLevel.Level_10_1,
-                Vortice.Direct3D.FeatureLevel.Level_10_0,
-            },
-            out var device).CheckError();
+        ID3D11Device? device = null;
+        if (!forceWarp)
+        {
+            var hr = D3D11.D3D11.D3D11CreateDevice(
+                adapter: null,
+                DriverType.Hardware,
+                creationFlags,
+                featureLevels,
+                out device);
+            if (hr.Failure) device = null;
+        }
+
+        if (device == null)
+        {
+            // Fallback to WARP software renderer.
+            D3D11.D3D11.D3D11CreateDevice(
+                adapter: null,
+                DriverType.Warp,
+                creationFlags,
+                featureLevels,
+                out device).CheckError();
+            IsWarp = true;
+        }
         D3DDevice = device;
 
         using var dxgiDevice = D3DDevice.QueryInterface<IDXGIDevice1>();

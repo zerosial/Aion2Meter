@@ -34,6 +34,36 @@ internal sealed class AppSettings
 
     // ── visual ──
     public int Opacity { get; set; } = 90;       // 0..100
+    public string FontName { get; set; } = "Malgun Gothic";
+    public int FontWeight { get; set; } = 400;  // 100~900 (Normal=400, Bold=700)
+    public float FontSize { get; set; } = 9f;
+
+    /// UI theme colors as hex (#RRGGBB). null entries = built-in default.
+    public ThemeColors Theme { get; set; } = new();
+
+    internal sealed class ThemeColors
+    {
+        public string Background { get; set; } = "#1E1E2A";  // form bg
+        public string Header     { get; set; } = "#252535";  // header bg
+        public string Border     { get; set; } = "#3A3A4A";  // border/dividers
+        public string TextPrimary   { get; set; } = "#C8C8D0"; // main text
+        public string TextSecondary { get; set; } = "#6E6E80"; // dim text
+        public string Accent     { get; set; } = "#4DE8E0";  // accent/highlight
+
+        // ── helpers (not serialized) ──
+        [JsonIgnore] public System.Drawing.Color BgColor      => ParseHex(Background);
+        [JsonIgnore] public System.Drawing.Color HeaderColor  => ParseHex(Header);
+        [JsonIgnore] public System.Drawing.Color BorderColor  => ParseHex(Border);
+        [JsonIgnore] public System.Drawing.Color TextColor    => ParseHex(TextPrimary);
+        [JsonIgnore] public System.Drawing.Color TextDimColor => ParseHex(TextSecondary);
+        [JsonIgnore] public System.Drawing.Color AccentColor  => ParseHex(Accent);
+
+        public static System.Drawing.Color ParseHex(string hex)
+        {
+            try { return System.Drawing.ColorTranslator.FromHtml(hex); }
+            catch { return System.Drawing.Color.Gray; }
+        }
+    }
     public int TextScale { get; set; } = 100;
     public int FontScale { get; set; } = 100;
     public int RowHeight { get; set; } = 90;
@@ -51,12 +81,21 @@ internal sealed class AppSettings
     public string ScoreDisplay { get; set; } = "both";
     public string ScoreFormat { get; set; } = "full";
     public string DpsTimeMode { get; set; } = "wallclock";
+    public string NumberFormat { get; set; } = "abbreviated";  // "full" | "abbreviated"
 
     // ── secondary windows ──
+    public int DetailPanelX { get; set; } = -1;
+    public int DetailPanelY { get; set; } = -1;
     public int DetailPanelWidth { get; set; } = 900;
     public int DetailPanelHeight { get; set; } = 400;
+    public int CombatRecordsPanelX { get; set; } = -1;
+    public int CombatRecordsPanelY { get; set; } = -1;
     public int CombatRecordsPanelWidth { get; set; } = 620;
     public int CombatRecordsPanelHeight { get; set; } = 520;
+    public int SettingsPanelX { get; set; } = -1;
+    public int SettingsPanelY { get; set; } = -1;
+    public int SettingsPanelWidth { get; set; } = 400;
+    public int SettingsPanelHeight { get; set; } = 420;
 
     // ── consent / identity ──
     public string? ConsentVersion { get; set; }

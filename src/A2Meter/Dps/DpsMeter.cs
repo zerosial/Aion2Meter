@@ -118,6 +118,7 @@ internal sealed class DpsMeter
                                      Name         = s.Name,
                                      Total        = s.Total,
                                      Hits         = s.Hits,
+                                     MaxHit       = s.MaxHit,
                                      CritRate     = s.Hits == 0 ? 0 : (double)s.Crits / s.Hits,
                                      BackRate     = s.Hits == 0 ? 0 : (double)s.Backs / s.Hits,
                                      StrongRate   = s.Hits == 0 ? 0 : (double)s.HardHits / s.Hits,
@@ -185,6 +186,7 @@ internal sealed class DpsMeter
             }
             s.Total += damage;
             s.Hits++;
+            if (damage > s.MaxHit)       s.MaxHit = damage;
             if (isCrit)                  s.Crits++;
             if ((hitFlags & 0x01) != 0)  s.Backs++;
             if ((hitFlags & 0x10) != 0)  s.HardHits++;
@@ -222,6 +224,7 @@ internal sealed class DpsMeter
         public long Blocks;
         public long Evades;
         public long MultiHits;
+        public long MaxHit;
         public int[]? Specs;
     }
 }

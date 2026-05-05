@@ -1,43 +1,58 @@
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using A2Meter.Direct2D;
+using A2Meter.Dps.Protocol;
 using D2DColor = Vortice.Mathematics.Color4;
 
 namespace A2Meter.Dps;
 
 /// Glues sniffer events to the meter, then pushes snapshots to the D2D canvas
-/// at a fixed cadence (~10 Hz). Used to also push to a WebBridge for an HTML
-/// overlay; that path is gone now that the overlay is fully native.
+/// at a fixed cadence (~10 Hz). Supports both WinForms (DpsCanvas) and headless
+/// (ImGui polling via DataPushed event) modes.
 internal sealed class DpsPipeline : IDisposable
 {
     private readonly IPacketSource _source;
     private readonly DpsMeter _meter;
     private readonly PartyTracker _party;
-    private readonly DpsCanvas _canvas;
-    private readonly System.Windows.Forms.Timer _pushTimer;
+    private readonly DpsCanvas? _canvas;
+    private readonly System.Threading.Timer _pushTimer;
     private readonly CombatHistory _history = new();
 
     private const int PushIntervalMs = 100;
-    /// Idle window after which an active session ends and gets summarized.
-    private const double SessionIdleSeconds = 5.0;
+    /// Idle window after which an active session ends (matches original: 3s).
+    private const double SessionIdleSeconds = 3.0;
 
     private MobTarget? _currentTarget;
     private int        _currentTargetId;
+    private int        _sessionBossId;   // boss entityId when session ended (for new-boss reset)
     private DateTime   _lastHitUtc      = DateTime.MinValue;
     private long       _peakDpsThisSess;
     private bool       _sessionActive;
     private bool       _viewingHistory;
+    private bool       _selfDetectedOnce;
     private DpsCanvas.SessionSummary? _lastSummary;
+
+    // ── Countdown timer mode ──
+    private int        _countdownSec;       // 0 = off, 30/60/90/... = active limit
+    private DateTime   _countdownStart;     // combat start time for countdown
+    private bool       _countdownExpired;   // true = timer ended, stop measuring
+
+    // Cached last-frame data so we keep showing bars after session ends.
+    private IReadOnlyList<DpsCanvas.PlayerRow>? _lastRows;
+    private long   _lastTotal;
+    private string _lastTimer = "";
 
     /// Per-actor running peak DPS this session (resets when session ends).
     private readonly Dictionary<int, long> _peakByActor = new();
+
+    /// Fired at ~10 Hz with the latest snapshot data (for ImGui headless mode).
+    public event Action<IReadOnlyList<DpsCanvas.PlayerRow>, long, string, MobTarget?, DpsCanvas.SessionSummary?>? DataPushed;
 
     public DpsPipeline(
         IPacketSource source,
         DpsMeter meter,
         PartyTracker party,
-        DpsCanvas canvas)
+        DpsCanvas? canvas = null)
     {
         _source = source;
         _meter  = meter;
@@ -46,82 +61,134 @@ internal sealed class DpsPipeline : IDisposable
 
         _source.CombatHit       += OnCombatHit;
         _source.TargetChanged   += OnTargetChanged;
-        _source.PartyMemberSeen += m => _party.Upsert(m);
+        _source.PartyMemberSeen += OnPartyMemberSeen;
+        _source.PartyLeft       += () => _party.ClearPartyFlags();
 
-        _pushTimer = new System.Windows.Forms.Timer { Interval = PushIntervalMs };
-        _pushTimer.Tick += (_, _) => Push();
+        _pushTimer = new System.Threading.Timer(_ => Push(), null,
+            System.Threading.Timeout.Infinite, PushIntervalMs);
     }
 
     public CombatHistory History => _history;
     public void EnterHistoryView() => _viewingHistory = true;
     public void ExitHistoryView()  => _viewingHistory = false;
 
+    /// Current countdown limit (0 = off).
+    public int CountdownSeconds => _countdownSec;
+    /// Whether the countdown has expired and DPS measurement is frozen.
+    public bool CountdownExpired => _countdownExpired;
+
+    /// Cycle countdown: off → 30 → 60 → 90 → 120 → 150 → 180 → off
+    public void CycleCountdown()
+    {
+        if (_countdownSec >= 180) _countdownSec = 0;
+        else _countdownSec += 30;
+        _countdownExpired = false;
+    }
+
     public void Start()
     {
         _source.Start();
-        _pushTimer.Start();
+        _pushTimer.Change(0, PushIntervalMs);
     }
 
     public void Stop()
     {
-        _pushTimer.Stop();
+        _pushTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
         _source.Stop();
     }
 
-    public void Reset() => _meter.Reset();
+    public void Reset()
+    {
+        _meter.Reset();
+        _countdownExpired = false;
+        _lastSummary = null;
+        _lastRows = null;
+        _sessionActive = false;
+        _peakByActor.Clear();
+        _peakDpsThisSess = 0;
+    }
+
+    private void OnPartyMemberSeen(PartyMember m)
+    {
+        _party.Upsert(m);
+
+        // Zone transition: when self is re-detected, unconditionally reset.
+        if (m.IsSelf)
+        {
+            if (_selfDetectedOnce)
+            {
+                ResetSession();
+                _lastSummary = null;
+                _lastRows = null;
+                _currentTarget = null;
+                _currentTargetId = 0;
+            }
+            _selfDetectedOnce = true;
+        }
+    }
 
     private void OnCombatHit(CombatHitArgs e)
     {
-        // Exit history viewing mode when new combat starts.
-        _viewingHistory = false;
+        // Self/party filter: if self is not known yet, ignore all combat.
+        if (_party.SelfEntityId == null)
+            return;
+        // Self: always allowed.
+        // Others: only allowed when a boss target is active (implies dungeon/instance
+        // where only party members are present). Blocks town/open-world noise.
+        if (e.ActorId != _party.SelfEntityId)
+        {
+            if (_currentTarget is not { IsBoss: true, MaxHp: > 0 })
+                return;
+        }
 
-        // Deferred reset: previous session ended but data was kept for review.
-        // Clear now that a new fight is starting.
+        // Countdown expired → ignore all hits until manual reset.
+        if (_countdownExpired)
+            return;
+
+        // Session frozen (boss killed / idle ended):
+        // Allow reset only when combat starts against a NEW boss.
         if (!_sessionActive && _lastSummary != null)
         {
-            _meter.Reset();
-            _peakByActor.Clear();
-            _peakDpsThisSess = 0;
-            _lastSummary = null;
+            // New boss target detected → auto-reset for the new fight.
+            if (_currentTargetId != 0 && _currentTargetId != _sessionBossId)
+            {
+                _meter.Reset();
+                _peakByActor.Clear();
+                _peakDpsThisSess = 0;
+                _lastSummary = null;
+                _lastRows = null;
+                _sessionBossId = 0;
+            }
+            else
+            {
+                return; // Same boss or no boss — stay frozen.
+            }
         }
+
+        // Start countdown clock on first hit of a new session.
+        if (!_sessionActive && _countdownSec > 0)
+            _countdownStart = DateTime.UtcNow;
 
         _meter.RecordHit(e.ActorId, e.TargetId, e.Name, e.JobCode, e.Damage, e.HitFlags, e.IsHeal, e.Skill, e.ExtraHits, e.IsDot, e.Specs);
         _lastHitUtc = DateTime.UtcNow;
         _sessionActive = true;
     }
 
-    /// Match the original A2Power "single pull = single session" semantics:
-    /// every fresh boss spawn finalises the previous session and resets the
-    /// meter so the new fight starts at 0. Non-boss target changes are ignored.
+    /// Update target tracking. No automatic reset — data persists until manual Reset().
     private void OnTargetChanged(MobTarget? t)
     {
-        bool isNewBoss = t is { IsBoss: true, MaxHp: > 0 } &&
-                         (_currentTarget == null
-                          || !_currentTarget.IsBoss
-                          || !ReferenceEquals(_currentTarget, t) && _currentTarget.MaxHp != t.MaxHp);
-
         _meter.SetTarget(t);
         _currentTarget = t;
         _currentTargetId = (t is { IsBoss: true }) ? t.EntityId : 0;
-
-        if (isNewBoss)
-        {
-            if (_sessionActive)
-            {
-                var prev = _meter.BuildCurrentSnapshot();
-                if (prev.TotalPartyDamage > 0)
-                {
-                    _lastSummary = BuildSummary(prev);
-                    SaveRecord(prev);
-                }
-            }
-            ResetSession();
-        }
     }
 
     private void Push()
     {
         if (_viewingHistory) return;
+
+        // Sync countdown state to canvas.
+        if (_canvas != null)
+            _canvas.CountdownExpired = _countdownExpired;
 
         // When a boss is active, scope the canvas to that boss's damage only —
         // matches the original A2Power "기록 조회 중" view. Otherwise show the
@@ -143,20 +210,84 @@ internal sealed class DpsPipeline : IDisposable
                 _peakByActor[p.EntityId] = p.Dps;
         }
 
-        // End-of-session detection: N seconds since last damage event.
-        // Don't reset — keep bars visible so the user can click to inspect.
-        // Reset is deferred to OnCombatHit when the next fight starts.
-        if (_sessionActive && snap.TotalPartyDamage > 0 &&
-            (DateTime.UtcNow - _lastHitUtc).TotalSeconds > SessionIdleSeconds)
+        // Countdown timer expiry: freeze measurement when time is up.
+        if (_sessionActive && _countdownSec > 0 && !_countdownExpired)
+        {
+            double elapsed = (DateTime.UtcNow - _countdownStart).TotalSeconds;
+            if (elapsed >= _countdownSec)
+            {
+                _countdownExpired = true;
+                _meter.Stop();
+                _sessionActive = false;
+
+                // Build final snapshot at countdown limit.
+                var finalSnap = _currentTargetId != 0
+                    ? _meter.BuildTargetSnapshot(_currentTargetId)
+                    : _meter.BuildCurrentSnapshot();
+                _lastRows = MapForCanvas(finalSnap.Players, _countdownSec);
+                _lastTotal = finalSnap.TotalPartyDamage;
+                _lastTimer = FormatTimer(_countdownSec);
+                _lastSummary = BuildSummary(finalSnap);
+                SaveRecord(finalSnap);
+            }
+        }
+
+        // When countdown expired, show frozen data.
+        if (_countdownExpired && _lastRows != null)
+        {
+            _canvas?.SetData(_lastRows, _lastTotal, _lastTimer, _currentTarget, _lastSummary);
+            DataPushed?.Invoke(_lastRows, _lastTotal, _lastTimer, _currentTarget, _lastSummary);
+            return;
+        }
+
+        // End-of-session detection:
+        // - Boss killed (HP=0): stop timer immediately, freeze bars.
+        // - 3s idle + boss NOT alive: stop timer, freeze bars.
+        // - Boss alive: timer keeps running indefinitely.
+        // After session ends, bars remain until manual Reset().
+        bool bossKilled = _sessionActive && _currentTarget is { IsBoss: true, MaxHp: > 0, CurrentHp: <= 0 };
+        bool isDummy = _currentTarget != null && IsDummy(_currentTarget.Name);
+        bool bossAlive = _currentTarget is { IsBoss: true, MaxHp: > 0, CurrentHp: > 0 } && !isDummy;
+        bool idleTimeout = _sessionActive && snap.TotalPartyDamage > 0 &&
+            !bossAlive &&
+            (DateTime.UtcNow - _lastHitUtc).TotalSeconds > SessionIdleSeconds;
+
+        if (bossKilled || idleTimeout)
         {
             _lastSummary = BuildSummary(snap);
             SaveRecord(snap);
             _meter.Stop();
             _sessionActive = false;
+            _sessionBossId = _currentTargetId;
+
+            // Cache final frame — keep showing bars after session ends.
+            _lastRows = MapForCanvas(snap.Players, snap.ElapsedSeconds);
+            _lastTotal = snap.TotalPartyDamage;
+            _lastTimer = FormatTimer(snap.ElapsedSeconds);
         }
 
-        _canvas.SetData(MapForCanvas(snap.Players, snap.ElapsedSeconds), snap.TotalPartyDamage,
-                        FormatTimer(snap.ElapsedSeconds), _currentTarget, _lastSummary);
+        // After session ends, keep displaying the last frame instead of empty.
+        if (!_sessionActive && _lastRows != null)
+        {
+            _canvas?.SetData(_lastRows, _lastTotal, _lastTimer, _currentTarget, _lastSummary);
+            DataPushed?.Invoke(_lastRows, _lastTotal, _lastTimer, _currentTarget, _lastSummary);
+            return;
+        }
+
+        // When countdown active, show remaining time instead of elapsed.
+        var rows = MapForCanvas(snap.Players, snap.ElapsedSeconds);
+        string timer;
+        if (_countdownSec > 0 && _sessionActive)
+        {
+            double remaining = Math.Max(0, _countdownSec - (DateTime.UtcNow - _countdownStart).TotalSeconds);
+            timer = FormatTimer(remaining);
+        }
+        else
+        {
+            timer = FormatTimer(snap.ElapsedSeconds);
+        }
+        _canvas?.SetData(rows, snap.TotalPartyDamage, timer, _currentTarget, _lastSummary);
+        DataPushed?.Invoke(rows, snap.TotalPartyDamage, timer, _currentTarget, _lastSummary);
     }
 
     private DpsCanvas.SessionSummary BuildSummary(DpsSnapshot snap)
@@ -210,8 +341,9 @@ internal sealed class DpsPipeline : IDisposable
             if (string.IsNullOrEmpty(p.Name) || p.Name.StartsWith('#') || p.JobCode < 0)
                 continue;
 
-            // Only show party members. Skip for history view or when no party data exists.
-            if (filterParty && _party.Members.Count > 0 && !_party.Members.ContainsKey((uint)p.EntityId))
+            // Filter out non-self actors when no boss context exists.
+            if (filterParty && _currentTarget is not { IsBoss: true, MaxHp: > 0 }
+                && p.EntityId != (_party.SelfEntityId ?? -1))
                 continue;
 
             IReadOnlyList<DpsCanvas.SkillBar>? skills = null;
@@ -233,13 +365,22 @@ internal sealed class DpsPipeline : IDisposable
                         MultiHitRate: s.MultiHitRate,
                         DodgeRate: s.DodgeRate,
                         BlockRate: s.BlockRate,
+                        MaxHit: s.MaxHit,
                         Specs: s.Specs));
                 }
                 skills = sb;
             }
 
             int cp = 0;
-            if (_party.Members.TryGetValue((uint)p.EntityId, out var pm)) cp = pm.CombatPower;
+            int sid = p.ServerId;
+            string sname = p.ServerName;
+            if (_party.Members.TryGetValue((uint)p.EntityId, out var pm))
+            {
+                cp = pm.CombatPower;
+                if (pm.ServerId > 0) { sid = pm.ServerId; sname = pm.ServerName; }
+            }
+            if (string.IsNullOrEmpty(sname) && sid > 0)
+                sname = ServerMap.GetName(sid);
             long peak = _peakByActor.TryGetValue(p.EntityId, out var pk) ? pk : p.Dps;
             long avg  = elapsedSec > 0 ? (long)(p.TotalDamage / elapsedSec) : p.Dps;
 
@@ -256,10 +397,15 @@ internal sealed class DpsPipeline : IDisposable
                 CombatPower: cp,
                 PeakDps:     peak,
                 AvgDps:      avg,
-                DotDamage:   p.DotDamage));
+                DotDamage:   p.DotDamage,
+                ServerId:    sid,
+                ServerName:  sname));
         }
         return rows;
     }
+
+    private static bool IsDummy(string? name)
+        => name != null && (name.Contains("허수아비") || name.Contains("샌드백"));
 
     private static string FormatTimer(double seconds)
     {
@@ -293,6 +439,6 @@ internal sealed class DpsPipeline : IDisposable
     public void Dispose()
     {
         _pushTimer.Dispose();
-        _source.Dispose();
+        _source?.Dispose();
     }
 }

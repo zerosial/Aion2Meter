@@ -21,30 +21,35 @@ internal sealed class OverlayHeaderPanel : Panel
     private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
     public event Action<bool>? LockToggled;
+    public event Action<bool>? AnonymousToggled;
     public event Action?       HistoryClicked;
+    public event Action?       SettingsClicked;
     public event Action?       CloseClicked;
     public event Action<int>?  OpacityChanged;
 
     private readonly IconButton _btnLock;
+    private readonly IconButton _btnAnon;
     private readonly IconButton _btnHistory;
+    private readonly IconButton _btnSettings;
     private readonly IconButton _btnClose;
-    private readonly TrackBar   _sliderOpacity;
+    private readonly SlimSlider _sliderOpacity;
     private readonly Label      _brand;
 
     private bool _locked;
+    private bool _anonymous;
 
     public OverlayHeaderPanel()
     {
         Dock      = DockStyle.Top;
         Height    = 36;
-        BackColor = Color.FromArgb(12, 18, 30);
+        BackColor = AppSettings.Instance.Theme.HeaderColor;
         DoubleBuffered = true;
 
         _brand = new Label
         {
             Text      = "A2Meter",
-            ForeColor = Color.FromArgb(170, 195, 230),
-            Font      = new Font("Malgun Gothic", 9.5f, FontStyle.Bold),
+            ForeColor = AppSettings.Instance.Theme.TextColor,
+            Font      = new Font(AppSettings.Instance.FontName, AppSettings.Instance.FontSize + 0.5f, FontStyle.Bold),
             AutoSize  = true,
             Location  = new Point(10, 9),
             BackColor = Color.Transparent,
@@ -54,29 +59,29 @@ internal sealed class OverlayHeaderPanel : Panel
         this.MouseMove   += (_, e) => OnHeaderMouseMove(e);
 
         _btnLock     = new IconButton(IconKind.Unlock)   { TabStop = false };
+        _btnAnon     = new IconButton(IconKind.Eye)      { TabStop = false };
         _btnHistory  = new IconButton(IconKind.History)  { TabStop = false };
+        _btnSettings = new IconButton(IconKind.Settings) { TabStop = false };
         _btnClose    = new IconButton(IconKind.Close)    { TabStop = false, HoverColor = Color.FromArgb(220, 70, 70) };
 
-        _sliderOpacity = new TrackBar
+        _sliderOpacity = new SlimSlider(20, 100, Math.Clamp(Core.AppSettings.Instance.Opacity, 20, 100))
         {
-            Minimum = 20,
-            Maximum = 100,
-            Value = Math.Clamp(Core.AppSettings.Instance.Opacity, 20, 100),
-            TickStyle = TickStyle.None,
-            AutoSize = false,
-            Height = 22,
-            Width = 80,
-            BackColor = Color.FromArgb(12, 18, 30),
-            Cursor = Cursors.Hand,
+            Width = 72,
+            Height = 20,
+            TabStop = false,
         };
-        _sliderOpacity.ValueChanged += (_, _) => OpacityChanged?.Invoke(_sliderOpacity.Value);
+        _sliderOpacity.ValueChanged += v => OpacityChanged?.Invoke(v);
 
         _btnLock.Click     += (_, _) => { _locked = !_locked; _btnLock.Kind = _locked ? IconKind.Lock : IconKind.Unlock; _btnLock.Invalidate(); LockToggled?.Invoke(_locked); };
+        _btnAnon.Click     += (_, _) => { _anonymous = !_anonymous; _btnAnon.Kind = _anonymous ? IconKind.EyeOff : IconKind.Eye; _btnAnon.Invalidate(); AnonymousToggled?.Invoke(_anonymous); };
         _btnHistory.Click  += (_, _) => HistoryClicked?.Invoke();
+        _btnSettings.Click += (_, _) => SettingsClicked?.Invoke();
         _btnClose.Click    += (_, _) => CloseClicked?.Invoke();
 
         Controls.Add(_btnLock);
+        Controls.Add(_btnAnon);
         Controls.Add(_btnHistory);
+        Controls.Add(_btnSettings);
         Controls.Add(_sliderOpacity);
         Controls.Add(_btnClose);
         Controls.Add(_brand);
@@ -92,6 +97,17 @@ internal sealed class OverlayHeaderPanel : Panel
         _btnLock.Kind = IconKind.Unlock;
         _btnLock.Invalidate();
     }
+
+    public void SetAnonymous(bool anon)
+    {
+        _anonymous = anon;
+        _btnAnon.Kind = anon ? IconKind.EyeOff : IconKind.Eye;
+        _btnAnon.Invalidate();
+    }
+
+    /// Returns true if the client point hits the lock button.
+    public bool IsLockButtonArea(Point clientPt)
+        => _btnLock.Bounds.Contains(clientPt);
 
     /// Returns true if a hit at the given client point should be treated as a
     /// title-bar drag region (so the OverlayForm can move on click-drag).
@@ -110,7 +126,11 @@ internal sealed class OverlayHeaderPanel : Panel
         int x  = Width - 8 - btnSize;
         _btnClose.SetBounds(x, y, btnSize, btnSize);
         x -= btnSize + gap;
+        _btnSettings.SetBounds(x, y, btnSize, btnSize);
+        x -= btnSize + gap;
         _btnHistory.SetBounds(x, y, btnSize, btnSize);
+        x -= btnSize + gap;
+        _btnAnon.SetBounds(x, y, btnSize, btnSize);
         x -= btnSize + gap;
         _btnLock.SetBounds(x, y, btnSize, btnSize);
         // Opacity slider sits left of the icon buttons.
@@ -121,7 +141,7 @@ internal sealed class OverlayHeaderPanel : Panel
     protected override void OnPaint(PaintEventArgs e)
     {
         // 1px subtle bottom border.
-        using var pen = new Pen(Color.FromArgb(28, 36, 56));
+        using var pen = new Pen(AppSettings.Instance.Theme.BorderColor);
         e.Graphics.DrawLine(pen, 0, Height - 1, Width, Height - 1);
     }
 
@@ -137,7 +157,7 @@ internal sealed class OverlayHeaderPanel : Panel
         SendMessage(top.Handle, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
     }
 
-    private const int EdgeMargin = 6;
+    private const int EdgeMargin = 10;
 
     /// Header sits at the top of the form, so it owns the top edge + the top
     /// 6px of the left/right edges. Anywhere else on the panel acts as drag.
@@ -185,7 +205,7 @@ internal sealed class OverlayHeaderPanel : Panel
 
     // ─── Owner-drawn icon button ─────────────────────────────────────
 
-    public enum IconKind { Lock, Unlock, History, Close }
+    public enum IconKind { Lock, Unlock, Eye, EyeOff, History, Settings, Close }
 
     private sealed class IconButton : Control
     {
@@ -227,16 +247,19 @@ internal sealed class OverlayHeaderPanel : Panel
             }
 
             // Foreground glyph.
-            var fg = _hover ? Color.FromArgb(235, 240, 250) : Color.FromArgb(170, 195, 230);
+            var fg = _hover ? Color.FromArgb(235, 240, 250) : AppSettings.Instance.Theme.TextColor;
             using var pen = new Pen(fg, 1.6f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             int cx = Width / 2, cy = Height / 2;
 
             switch (Kind)
             {
-                case IconKind.Lock:    DrawLock(g, pen, cx, cy, closed: true);  break;
-                case IconKind.Unlock:  DrawLock(g, pen, cx, cy, closed: false); break;
+                case IconKind.Lock:     DrawLock(g, pen, cx, cy, closed: true);  break;
+                case IconKind.Unlock:   DrawLock(g, pen, cx, cy, closed: false); break;
+                case IconKind.Eye:      DrawEye(g, pen, cx, cy, off: false); break;
+                case IconKind.EyeOff:   DrawEye(g, pen, cx, cy, off: true);  break;
                 case IconKind.History:  DrawHistory(g, pen, cx, cy); break;
-                case IconKind.Close:    DrawCross(g, pen, cx, cy); break;
+                case IconKind.Settings: DrawGear(g, pen, cx, cy);   break;
+                case IconKind.Close:    DrawCross(g, pen, cx, cy);  break;
             }
         }
 
@@ -263,6 +286,17 @@ internal sealed class OverlayHeaderPanel : Panel
         }
 
 
+        private static void DrawEye(Graphics g, Pen pen, int cx, int cy, bool off)
+        {
+            // Eye shape: two arcs forming an almond shape.
+            g.DrawArc(pen, cx - 7, cy - 3, 14, 10, 200, 140);
+            g.DrawArc(pen, cx - 7, cy - 7, 14, 10, 20, 140);
+            // Pupil.
+            g.DrawEllipse(pen, cx - 2, cy - 2, 4, 4);
+            // Slash for "off" state.
+            if (off) g.DrawLine(pen, cx - 6, cy + 5, cx + 6, cy - 5);
+        }
+
         private static void DrawHistory(Graphics g, Pen pen, int cx, int cy)
         {
             // Clock icon: circle + two hands.
@@ -271,10 +305,160 @@ internal sealed class OverlayHeaderPanel : Panel
             g.DrawLine(pen, cx, cy, cx + 3, cy + 1);
         }
 
+        private static void DrawGear(Graphics g, Pen pen, int cx, int cy)
+        {
+            // Simple gear: outer circle with notches + inner circle.
+            g.DrawEllipse(pen, cx - 4, cy - 4, 8, 8);
+            // 6 spokes radiating outward.
+            for (int i = 0; i < 6; i++)
+            {
+                double angle = i * Math.PI / 3;
+                int x1 = cx + (int)(4 * Math.Cos(angle));
+                int y1 = cy + (int)(4 * Math.Sin(angle));
+                int x2 = cx + (int)(6 * Math.Cos(angle));
+                int y2 = cy + (int)(6 * Math.Sin(angle));
+                g.DrawLine(pen, x1, y1, x2, y2);
+            }
+        }
+
         private static void DrawCross(Graphics g, Pen pen, int cx, int cy)
         {
             g.DrawLine(pen, cx - 5, cy - 5, cx + 5, cy + 5);
             g.DrawLine(pen, cx + 5, cy - 5, cx - 5, cy + 5);
+        }
+    }
+
+    // ─── Custom slim slider ─────────────────────────────────────────
+
+    private sealed class SlimSlider : Control
+    {
+        public event Action<int>? ValueChanged;
+
+        private int _min, _max, _value;
+        private bool _dragging;
+        private bool _hover;
+
+        private const int TrackHeight = 4;
+        private const int ThumbRadius = 6;
+
+        public SlimSlider(int min, int max, int value)
+        {
+            _min = min; _max = max; _value = Math.Clamp(value, min, max);
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.SupportsTransparentBackColor
+                   | ControlStyles.OptimizedDoubleBuffer
+                   | ControlStyles.AllPaintingInWmPaint
+                   | ControlStyles.UserPaint, true);
+            BackColor = Color.Transparent;
+            Cursor = Cursors.Hand;
+        }
+
+        public int Value
+        {
+            get => _value;
+            set { _value = Math.Clamp(value, _min, _max); Invalidate(); }
+        }
+
+        private int TrackLeft => ThumbRadius;
+        private int TrackRight => Width - ThumbRadius;
+        private float Ratio => (_value - _min) / (float)Math.Max(1, _max - _min);
+
+        private int ThumbX => TrackLeft + (int)(Ratio * (TrackRight - TrackLeft));
+
+        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { _hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _dragging = true;
+                Capture = true;
+                UpdateValue(e.X);
+            }
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (_dragging) UpdateValue(e.X);
+            base.OnMouseMove(e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _dragging = false;
+            Capture = false;
+            base.OnMouseUp(e);
+        }
+
+        private void UpdateValue(int x)
+        {
+            float ratio = (x - TrackLeft) / (float)Math.Max(1, TrackRight - TrackLeft);
+            int newVal = _min + (int)Math.Round(ratio * (_max - _min));
+            newVal = Math.Clamp(newVal, _min, _max);
+            if (newVal != _value)
+            {
+                _value = newVal;
+                Invalidate();
+                ValueChanged?.Invoke(_value);
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            int cy = Height / 2;
+            int tl = TrackLeft, tr = TrackRight;
+            int tx = ThumbX;
+
+            // Track background (dark groove).
+            using (var trackBrush = new SolidBrush(Color.FromArgb(30, 40, 60)))
+            {
+                var trackRect = new RectangleF(tl, cy - TrackHeight / 2f, tr - tl, TrackHeight);
+                using var trackPath = RoundRectF(trackRect, TrackHeight / 2f);
+                g.FillPath(trackBrush, trackPath);
+            }
+
+            // Filled portion (accent).
+            if (tx > tl)
+            {
+                var accent = AppSettings.Instance.Theme.AccentColor;
+                var accentColor = _hover || _dragging ? ControlPaint.Light(accent, 0.3f) : accent;
+                using var fillBrush = new SolidBrush(accentColor);
+                var fillRect = new RectangleF(tl, cy - TrackHeight / 2f, tx - tl, TrackHeight);
+                using var fillPath = RoundRectF(fillRect, TrackHeight / 2f);
+                g.FillPath(fillBrush, fillPath);
+            }
+
+            // Thumb circle.
+            var thumbColor = _dragging ? Color.FromArgb(220, 235, 255)
+                           : _hover   ? Color.FromArgb(200, 220, 250)
+                                      : AppSettings.Instance.Theme.TextColor;
+            using (var thumbBrush = new SolidBrush(thumbColor))
+            {
+                int r = _dragging ? ThumbRadius + 1 : ThumbRadius;
+                g.FillEllipse(thumbBrush, tx - r, cy - r, r * 2, r * 2);
+            }
+
+            // Subtle shadow ring on thumb.
+            using (var ringPen = new Pen(Color.FromArgb(40, 0, 0, 0), 1f))
+                g.DrawEllipse(ringPen, tx - ThumbRadius, cy - ThumbRadius, ThumbRadius * 2, ThumbRadius * 2);
+        }
+
+        private static GraphicsPath RoundRectF(RectangleF rect, float radius)
+        {
+            var p = new GraphicsPath();
+            float d = radius * 2;
+            if (rect.Width < d) { p.AddEllipse(rect); return p; }
+            p.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            p.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            p.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+            p.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            p.CloseFigure();
+            return p;
         }
     }
 }
