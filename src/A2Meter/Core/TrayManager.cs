@@ -46,8 +46,7 @@ internal sealed class TrayManager : IDisposable
         {
             var item = (ToolStripMenuItem)s!;
             setFlag(item.Checked);
-            if (item.Checked) _form.HideOverlay();
-            else              _form.ShowOverlay();
+            _form.SetOverlayOnlyWhenAion(item.Checked);
         };
         menu.Items.Add(aionOnly);
 

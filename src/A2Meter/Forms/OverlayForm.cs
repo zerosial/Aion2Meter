@@ -27,6 +27,7 @@ internal sealed class OverlayForm : Form
     private readonly PartyTracker  _party   = new();
     private DpsPipeline? _pipeline;
     private ProtocolPipeline? _protocol;
+    private ForegroundWatcher? _fgWatcher;
 
     /// Optional override: when set before Load fires, OverlayForm uses this packet source
     /// instead of constructing a live PacketSniffer. Used for replay mode.
@@ -118,8 +119,6 @@ internal sealed class OverlayForm : Form
 
         _source ??= PacketSourceOverride ?? new PacketSniffer();
         _protocol = new ProtocolPipeline(_source, log: msg => Console.Error.WriteLine(msg));
-        // Bridge is null now — DpsPipeline still accepts one but the secondary
-        // windows manage their own when opened, so the overlay no longer needs it.
         _pipeline = new DpsPipeline(_source, _meter, _party, _dps);
         try { _pipeline.Start(); }
         catch (Exception ex)
@@ -127,10 +126,40 @@ internal sealed class OverlayForm : Form
             Console.Error.WriteLine("[overlay] packet source failed to start: " + ex.Message);
         }
 
+        // Foreground watcher: hide overlay when Aion 2 is not active.
+        _fgWatcher = new ForegroundWatcher("aion2");
+        _fgWatcher.ActiveChanged += OnAionActiveChanged;
+        if (AppSettings.Instance.OverlayOnlyWhenAion)
+            _fgWatcher.Start();
+    }
+
+    private void OnAionActiveChanged(bool active)
+    {
+        if (!AppSettings.Instance.OverlayOnlyWhenAion) return;
+        if (active) ShowOverlay();
+        else        HideOverlay();
+    }
+
+    /// Called from TrayManager when the setting is toggled.
+    public void SetOverlayOnlyWhenAion(bool enabled)
+    {
+        if (enabled)
+        {
+            _fgWatcher?.Start();
+            // If Aion 2 is not currently active, hide immediately.
+            if (_fgWatcher != null && !_fgWatcher.IsActive)
+                HideOverlay();
+        }
+        else
+        {
+            _fgWatcher?.Stop();
+            ShowOverlay();
+        }
     }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
+        _fgWatcher?.Dispose();
         _lockBtn?.Close();
         _pipeline?.Dispose();
         _protocol?.Dispose();
