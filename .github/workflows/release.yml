@@ -1,0 +1,52 @@
+name: Build and Release A2Meter
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # v1.0.3 등 v시작 태그가 푸시되면 빌드 및 릴리즈 동작
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # target이 net8.0이므로 8.0 SDK 설치
+
+    - name: Restore Dependencies
+      run: dotnet restore src/A2Meter/A2Meter.csproj
+
+    - name: Read Version from csproj
+      id: get_version
+      shell: pwsh
+      run: |
+        [xml]$csproj = Get-Content "src/A2Meter/A2Meter.csproj"
+        $version = $csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+
+    - name: Publish Application
+      run: dotnet publish src/A2Meter/A2Meter.csproj -c Release -r win-x64 --self-contained false -o publish/A2Meter-v${{ steps.get_version.outputs.version }}
+
+    - name: Compress Publish Directory
+      shell: pwsh
+      run: |
+        Compress-Archive -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/*" -DestinationPath "publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
