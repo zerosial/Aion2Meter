@@ -96,6 +96,7 @@ internal sealed class ProtocolPipeline : IDisposable
         _party.PartyLeft    += OnPartyLeft;
         _party.PartyEjected += OnPartyLeft;
         _party.CombatPowerDetected += OnPartyCpByName;
+        _party.DungeonDetected += (dId, stg) => (_source as IInternalEventRaise)?.RaiseDungeonDetected(dId, stg);
     }
 
     public void Dispose()
@@ -280,4 +281,5 @@ internal interface IInternalEventRaise
     void RaiseTargetChanged(MobTarget? target);
     void RaisePartyMemberSeen(PartyMember member);
     void RaisePartyLeft();
+    void RaiseDungeonDetected(int dungeonId, int stage);
 }

@@ -32,6 +32,7 @@ internal sealed class DpsPipeline : IDisposable
     private bool       _viewingHistory;
     private bool       _selfDetectedOnce;
     private DpsCanvas.SessionSummary? _lastSummary;
+    private int        _currentDungeonId;
 
     // ── Countdown timer mode ──
     private int        _countdownSec;       // 0 = off, 30/60/90/... = active limit
@@ -68,6 +69,7 @@ internal sealed class DpsPipeline : IDisposable
         _source.PartyMemberSeen += OnPartyMemberSeen;
         _source.PartyLeft       += () => _party.ClearPartyFlags();
         _source.SegmentReceived += seg => Ping.Feed(seg);
+        _source.DungeonDetected += (dId, stg) => _currentDungeonId = dId;
 
         _pushTimer = new System.Threading.Timer(_ => Push(), null,
             System.Threading.Timeout.Infinite, PushIntervalMs);
@@ -366,7 +368,8 @@ internal sealed class DpsPipeline : IDisposable
                 p.Name = $"{p.Name}[{sname}]";
         }
 
-        _history.Save(new CombatRecord
+        string dungeonName = _currentDungeonId > 0 ? SkillDatabase.Shared.GetDungeonName(_currentDungeonId) : "필드";
+        var record = new CombatRecord
         {
             Timestamp   = DateTime.Now,
             BossName    = _currentTarget?.Name,
@@ -375,7 +378,45 @@ internal sealed class DpsPipeline : IDisposable
             AverageDps  = snap.ElapsedSeconds > 0 ? (long)(snap.TotalPartyDamage / snap.ElapsedSeconds) : 0,
             PeakDps     = _peakDpsThisSess,
             Snapshot    = snap,
-        });
+            FieldName   = dungeonName,
+        };
+
+        _history.Save(record);
+
+        // Upload combat stats to the Node.js backend
+        try
+        {
+            string selfName = "";
+            string selfServer = "";
+            foreach (var m in _party.Members.Values)
+            {
+                if (m.IsSelf)
+                {
+                    selfName = m.Nickname;
+                    selfServer = m.ServerName;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(selfName))
+            {
+                foreach (var p in snap.Players)
+                {
+                    if (p.IsUploader)
+                    {
+                        selfName = StripServerSuffix(p.Name);
+                        selfServer = p.ServerName;
+                        break;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(selfName) && !string.IsNullOrEmpty(selfServer))
+            {
+                Api.StatsUploader.UploadRecordAsync(record, selfName, selfServer);
+            }
+        }
+        catch { /* best effort */ }
     }
 
     private void ResetSession()

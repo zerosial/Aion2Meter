@@ -31,6 +31,7 @@ internal interface IPacketSource : IDisposable
     event Action<MobTarget?>? TargetChanged;
     event Action<PartyMember>? PartyMemberSeen;
     event Action? PartyLeft;
+    event Action<int, int>? DungeonDetected;
 
     void Start();
     void Stop();

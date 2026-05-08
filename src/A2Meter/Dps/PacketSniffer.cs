@@ -18,12 +18,14 @@ internal sealed class PacketSniffer : IPacketSource, IInternalEventRaise
     void IInternalEventRaise.RaiseTargetChanged(MobTarget? t)   => TargetChanged?.Invoke(t);
     void IInternalEventRaise.RaisePartyMemberSeen(PartyMember m) => PartyMemberSeen?.Invoke(m);
     void IInternalEventRaise.RaisePartyLeft() => PartyLeft?.Invoke();
+    void IInternalEventRaise.RaiseDungeonDetected(int dungeonId, int stage) => DungeonDetected?.Invoke(dungeonId, stage);
 
     public event Action<TcpSegment>? SegmentReceived;
     public event Action<CombatHitArgs>? CombatHit;
     public event Action<MobTarget?>? TargetChanged;
     public event Action<PartyMember>? PartyMemberSeen;
     public event Action? PartyLeft;
+    public event Action<int, int>? DungeonDetected;
 
     public bool IsRunning { get; private set; }
 

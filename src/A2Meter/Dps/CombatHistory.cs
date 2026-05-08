@@ -15,6 +15,7 @@ internal sealed class CombatRecord
     public long TotalDamage { get; set; }
     public long AverageDps { get; set; }
     public long PeakDps { get; set; }
+    public string? FieldName { get; set; }
     public DpsSnapshot Snapshot { get; set; } = new();
 }
 
