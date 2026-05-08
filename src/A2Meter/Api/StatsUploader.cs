@@ -8,16 +8,27 @@ namespace A2Meter.Api;
 
 internal static class StatsUploader
 {
-    private static readonly HttpClient Http = new()
-    {
-        BaseAddress = new Uri("http://localhost:3001"),
-        Timeout = TimeSpan.FromSeconds(5),
-    };
+    private static readonly HttpClient Http;
 
     static StatsUploader()
     {
+        string uploadUrl = Environment.GetEnvironmentVariable("UPLOAD_URL") ?? "http://localhost:3001";
+        if (!uploadUrl.EndsWith("/")) uploadUrl += "/";
+
+        Http = new HttpClient
+        {
+            BaseAddress = new Uri(uploadUrl),
+            Timeout = TimeSpan.FromSeconds(5)
+        };
+
         Http.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
         Http.DefaultRequestHeaders.Add("Accept", "application/json");
+
+        string apiKey = Environment.GetEnvironmentVariable("UPLOAD_API_KEY");
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            Http.DefaultRequestHeaders.Add("X-Upload-Api-Key", apiKey);
+        }
     }
 
     public static async void UploadRecordAsync(CombatRecord record, string selfName, string selfServer)

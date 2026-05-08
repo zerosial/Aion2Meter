@@ -18,6 +18,13 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        try
+        {
+            string envFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
+            EnvLoader.Load(envFile);
+        }
+        catch { /* best effort */ }
+
         var parsed = ParseArgs(args);
 
         if (parsed.Demo)
