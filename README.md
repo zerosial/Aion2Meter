@@ -102,6 +102,43 @@ A2Meter.exe --demo                        # 더미 데이터 미리보기
 
 ---
 
+## 배포 및 자동화 (Release & Automation)
+
+본 저장소에는 빌드 및 GitHub Releases 업로드를 단순화하기 위한 두 가지 자동화 파이프라인이 구성되어 있습니다.
+
+### 1) GitHub Actions 클라우드 자동 배포 (추천)
+버전 이름이 명시된 **Git 태그를 원격 저장소에 푸시**하기만 하면, GitHub 클라우드 러너가 자동으로 빌드, ZIP 압축 및 GitHub Release 배포를 수행합니다.
+
+#### ⚠️ 필수 사전 설정 (.env 보안 주입)
+메인 어플리케이션은 컴파일 타임에 프로젝트 루트의 `.env` 환경 설정 파일을 임베디드 리소스로 주입합니다. `.env` 파일은 보안상 저장소에 커밋되지 않으므로, Actions가 이를 참조할 수 있도록 **최초 1회** 등록해주셔야 합니다.
+1. 포크한 GitHub 저장소의 **`Settings`** ➡️ **`Secrets and variables`** ➡️ **`Actions`** 메뉴로 이동합니다.
+2. **`New repository secret`**을 클릭합니다.
+3. Name에 `ENV_FILE`을 입력하고, Value에 로컬의 `.env` 내용 전체를 복사해 붙여넣고 저장합니다.
+
+#### 🚀 배포 실행 명령어
+버전을 정의하고, `v`로 시작하는 버전 태그(예: `v1.0.3-beta`, `v1.0.3-beta+server` 등)를 생성해 푸시합니다:
+```bash
+# 1. 로컬에 릴리즈할 새 버전에 대한 로컬 태그 생성
+git tag v1.0.3-beta+server
+
+# 2. 생성한 태그를 본인의 원격 저장소(origin)로 푸시
+git push origin v1.0.3-beta+server
+```
+> **팁**: 태그가 원격에 정상 푸시되면, GitHub 저장소의 **Actions** 탭에서 실시간 빌드 과정을 확인할 수 있으며, 완료 시 **Releases** 페이지에 자동으로 빌드 본 ZIP 파일이 업로드됩니다.
+
+---
+
+### 2) 로컬 PowerShell 원클릭 배포 스크립트
+로컬에서 즉시 빌드하여 GitHub에 초안(Draft) Release로 배포하고 싶을 때 사용합니다.
+1. [GitHub CLI (gh)](https://cli.github.com/)가 로컬에 설치되어 있고 로그인(`gh auth login`)된 상태여야 합니다.
+2. 프로젝트 루트 경로에서 아래 스크립트를 원클릭으로 실행합니다:
+   ```powershell
+   .\publish.ps1
+   ```
+   *(이 스크립트는 로컬의 실시간 `.env` 파일을 탑재해 빌드한 후, 자동으로 `publish/` 폴더 내에 ZIP 파일 압축 및 GitHub 초안 Release 생성을 완료해 줍니다.)*
+
+---
+
 ## 주요 기능
 
 | 기능 | 위치 |

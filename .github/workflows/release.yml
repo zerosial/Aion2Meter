@@ -3,7 +3,7 @@ name: Build and Release A2Meter
 on:
   push:
     tags:
-      - 'v*.*.*'  # v1.0.3 등 v시작 태그가 푸시되면 빌드 및 릴리즈 동작
+      - 'v*'  # v로 시작하는 모든 태그 (예: v1.0.3, v1.0.3-beta, v1.0.3-beta+server 등)에 대해 릴리즈 실행
 
 permissions:
   contents: write
@@ -15,6 +15,14 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Create .env file from Secrets
+      shell: pwsh
+      run: |
+        $envContent = @"
+        ${{ secrets.ENV_FILE }}
+        "@
+        Set-Content -Path ".env" -Value $envContent -Encoding Utf8
 
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
