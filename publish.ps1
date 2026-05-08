@@ -15,11 +15,15 @@ if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
 
 # 2. dotnet publish 실행 (--self-contained false 로 설정하면 닷넷 런타임 제외, true로 변경시 런타임 포함)
-dotnet publish $proj -c Release -r win-x64 --self-contained false -o $outDir
+dotnet publish $proj -c Release -r win-x64 --self-contained false -o $outDir -p:DebugType=None -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Publish failed"
     exit 1
 }
+
+# [추가] 압축 전 디버깅 기호 파일(*.pdb) 완전히 제거
+Write-Host "Cleaning up debugging symbol (*.pdb) files..." -ForegroundColor Cyan
+Remove-Item -Path "$outDir\*.pdb" -Force -ErrorAction SilentlyContinue
 
 # 3. ZIP 파일로 압축
 Write-Host "Compressing to $zipPath..." -ForegroundColor Cyan

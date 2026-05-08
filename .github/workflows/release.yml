@@ -41,7 +41,12 @@ jobs:
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     - name: Publish Application
-      run: dotnet publish src/A2Meter/A2Meter.csproj -c Release -r win-x64 --self-contained false -o publish/A2Meter-v${{ steps.get_version.outputs.version }}
+      run: dotnet publish src/A2Meter/A2Meter.csproj -c Release -r win-x64 --self-contained false -o publish/A2Meter-v${{ steps.get_version.outputs.version }} -p:DebugType=None -p:DebugSymbols=false
+
+    - name: Remove PDB Files
+      shell: pwsh
+      run: |
+        Remove-Item -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/*.pdb" -Force -ErrorAction SilentlyContinue
 
     - name: Compress Publish Directory
       shell: pwsh
@@ -51,7 +56,9 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip
+        files: |
+          publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip
+          publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter.exe
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
         draft: false

@@ -13,7 +13,7 @@ namespace A2Meter.Core;
 /// triggered only after the user confirms via the toast.
 internal static class AutoUpdater
 {
-    private const string RepoOwner = "a2meter";
+    private const string RepoOwner = "zerosial"; // 사용자님의 포크 저장소 ID로 매핑
     private const string RepoName = "Aion2Meter";
     private const string AssetName = "A2Meter.exe";
 
