@@ -383,40 +383,60 @@ internal sealed class DpsPipeline : IDisposable
 
         _history.Save(record);
 
-        // Upload combat stats to the Node.js backend
-        try
+        // Upload combat stats to the Node.js backend (boss combat only)
+        // Skip field mobs, dummies, and unnamed targets.
+        bool isBossCombat = _currentTarget is { IsBoss: true } && !string.IsNullOrEmpty(record.BossName)
+                            && !IsDummy(record.BossName);
+        if (isBossCombat)
         {
-            string selfName = "";
-            string selfServer = "";
-            foreach (var m in _party.Members.Values)
+            try
             {
-                if (m.IsSelf)
+                string selfName = "";
+                string selfServer = "";
+                foreach (var m in _party.Members.Values)
                 {
-                    selfName = m.Nickname;
-                    selfServer = m.ServerName;
-                    break;
-                }
-            }
-
-            if (string.IsNullOrEmpty(selfName))
-            {
-                foreach (var p in snap.Players)
-                {
-                    if (p.IsUploader)
+                    if (m.IsSelf)
                     {
-                        selfName = StripServerSuffix(p.Name);
-                        selfServer = p.ServerName;
+                        selfName = m.Nickname;
+                        selfServer = m.ServerName;
                         break;
                     }
                 }
-            }
 
-            if (!string.IsNullOrEmpty(selfName) && !string.IsNullOrEmpty(selfServer))
+                if (string.IsNullOrEmpty(selfName))
+                {
+                    foreach (var p in snap.Players)
+                    {
+                        if (p.IsUploader)
+                        {
+                            selfName = StripServerSuffix(p.Name);
+                            selfServer = p.ServerName;
+                            break;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(selfName) && !string.IsNullOrEmpty(selfServer))
+                {
+                    // Safe fire-and-forget: Task.Run prevents async void crash propagation
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await Api.StatsUploader.UploadRecordAsync(record, selfName, selfServer);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"[DpsPipeline] Upload background error: {ex.Message}");
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
             {
-                Api.StatsUploader.UploadRecordAsync(record, selfName, selfServer);
+                Console.Error.WriteLine($"[DpsPipeline] Upload setup error: {ex.Message}");
             }
         }
-        catch { /* best effort */ }
     }
 
     private void ResetSession()
