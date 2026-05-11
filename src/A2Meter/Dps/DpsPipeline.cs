@@ -15,6 +15,7 @@ internal sealed class DpsPipeline : IDisposable
     private readonly IPacketSource _source;
     private readonly DpsMeter _meter;
     private readonly PartyTracker _party;
+    private readonly BuffTracker _buffTracker = new();
     private readonly DpsCanvas? _canvas;
     private readonly System.Threading.Timer _pushTimer;
     private readonly CombatHistory _history = new();
@@ -31,7 +32,9 @@ internal sealed class DpsPipeline : IDisposable
     private bool       _sessionActive;
     private bool       _viewingHistory;
     private bool       _selfDetectedOnce;
+    private int        _selfEntityId;
     private DpsCanvas.SessionSummary? _lastSummary;
+    private bool       _inDungeon;
     private int        _currentDungeonId;
 
     // ── Countdown timer mode ──
@@ -53,6 +56,9 @@ internal sealed class DpsPipeline : IDisposable
     /// Fired at ~10 Hz with the latest snapshot data (for ImGui headless mode).
     public event Action<IReadOnlyList<DpsCanvas.PlayerRow>, long, string, MobTarget?, DpsCanvas.SessionSummary?>? DataPushed;
 
+    /// Fired once when combat starts (first hit of a new session).
+    public event Action? CombatStarted;
+
     public DpsPipeline(
         IPacketSource source,
         DpsMeter meter,
@@ -68,14 +74,16 @@ internal sealed class DpsPipeline : IDisposable
         _source.TargetChanged   += OnTargetChanged;
         _source.PartyMemberSeen += OnPartyMemberSeen;
         _source.PartyLeft       += () => _party.ClearPartyFlags();
+        _source.DungeonChanged  += id => { _inDungeon = id > 0 && SkillDatabase.Shared.IsDungeon(id); _currentDungeonId = id; };
+        _source.BuffEvent       += (eid, bid, type, dur, ts) => _buffTracker.OnBuff(eid, bid, type, dur, ts);
         _source.SegmentReceived += seg => Ping.Feed(seg);
-        _source.DungeonDetected += (dId, stg) => _currentDungeonId = dId;
 
         _pushTimer = new System.Threading.Timer(_ => Push(), null,
             System.Threading.Timeout.Infinite, PushIntervalMs);
     }
 
     public CombatHistory History => _history;
+    public BuffTracker Buffs => _buffTracker;
     public void EnterHistoryView() => _viewingHistory = true;
     public void ExitHistoryView()  => _viewingHistory = false;
 
@@ -107,6 +115,8 @@ internal sealed class DpsPipeline : IDisposable
     public void Reset()
     {
         _meter.Reset();
+        _party.Clear();
+        _buffTracker.Reset();
         _countdownExpired = false;
         _lastSummary = null;
         _lastRows = null;
@@ -127,16 +137,19 @@ internal sealed class DpsPipeline : IDisposable
         if (_canvas != null)
             _canvas.Invalidate();
 
-        // Zone transition: when self is re-detected, freeze session (stop timer)
-        // but keep data visible until next combat or manual reset.
+        // Zone/character transition detection:
+        // If self's CharacterId changes (alt switch, server move), reset state.
         if (m.IsSelf)
         {
-            if (_selfDetectedOnce && _sessionActive)
+            int characterId = (int)m.CharacterId;
+            if (_selfDetectedOnce && characterId != _selfEntityId)
             {
-                _sessionActive = false;
+                if (_sessionActive) _sessionActive = false;
                 _currentTarget = null;
                 _currentTargetId = 0;
+                _inDungeon = false;
             }
+            _selfEntityId = characterId;
             _selfDetectedOnce = true;
         }
     }
@@ -146,43 +159,50 @@ internal sealed class DpsPipeline : IDisposable
         // Self/party filter: if self is not known yet, ignore all combat.
         if (_party.SelfEntityId == null)
             return;
-        // Self: always allowed.
-        // Others: only allowed when a boss target is active (implies dungeon/instance
-        // where only party members are present). Blocks town/open-world noise.
-        if (e.ActorId != _party.SelfEntityId)
+
+        // DOT + non-dummy filter: only allow DOT if target is a dummy, otherwise
+        // require boss to be alive to accept hits.
+        if (!e.IsDot && (_currentTarget == null || !IsDummy(_currentTarget.Name)))
         {
-            if (_currentTarget is not { IsBoss: true, MaxHp: > 0 })
+            if (_currentTarget is not { IsBoss: true, MaxHp: > 0, CurrentHp: > 0 })
                 return;
         }
+
+        // Self: always allowed.
+        // Others: allowed when party is formed OR inside a dungeon.
+        if (e.ActorId != _party.SelfEntityId && !_party.HasParty && !_inDungeon)
+            return;
 
         // Countdown expired → ignore all hits until manual reset.
         if (_countdownExpired)
             return;
 
         // Session frozen (boss killed / idle ended):
-        // Allow reset only when combat starts against a NEW boss.
+        // Allow reset only when combat starts against a NEW boss (skip DOT carry-over).
         if (!_sessionActive && _lastSummary != null)
         {
+            if (e.IsDot || _currentTargetId == 0 || _currentTargetId == _sessionBossId)
+                return; // Same boss, no boss, or trailing DOT — stay frozen.
+
             // New boss target detected → auto-reset for the new fight.
-            if (_currentTargetId != 0 && _currentTargetId != _sessionBossId)
-            {
-                _meter.Reset();
-                _peakByActor.Clear();
-                _peakDpsThisSess = 0;
-                _lastSummary = null;
-                _lastRows = null;
-                _sessionBossId = 0;
-            }
+            if (_party.SelfEntityId is { } selfId)
+                _meter.ResetKeepSelf(selfId);
             else
-            {
-                return; // Same boss or no boss — stay frozen.
-            }
+                _meter.Reset();
+            _peakByActor.Clear();
+            _peakDpsThisSess = 0;
+            _lastSummary = null;
+            _lastRows = null;
+            _sessionBossId = 0;
         }
 
-        // First hit of a new session: purge non-party members and start countdown.
-        if (!_sessionActive)
+        // First hit of a new session: purge non-party members, reset buffs, start countdown.
+        bool wasInactive = !_sessionActive;
+        if (wasInactive)
         {
             _party.PurgeNonParty();
+            _buffTracker.Reset();
+            _buffTracker.Start();
             if (_countdownSec > 0)
                 _countdownStart = DateTime.UtcNow;
         }
@@ -190,6 +210,9 @@ internal sealed class DpsPipeline : IDisposable
         _meter.RecordHit(e.ActorId, e.TargetId, e.Name, e.JobCode, e.Damage, e.HitFlags, e.IsHeal, e.Skill, e.ExtraHits, e.IsDot, e.Specs);
         _lastHitUtc = DateTime.UtcNow;
         _sessionActive = true;
+
+        if (wasInactive)
+            CombatStarted?.Invoke();
     }
 
     /// Update target tracking. No automatic reset — data persists until manual Reset().
@@ -197,7 +220,7 @@ internal sealed class DpsPipeline : IDisposable
     {
         _meter.SetTarget(t);
         _currentTarget = t;
-        _currentTargetId = (t is { IsBoss: true }) ? t.EntityId : 0;
+        _currentTargetId = (t != null && (t.IsBoss || IsDummy(t.Name))) ? t.EntityId : 0;
     }
 
     private void Push()
@@ -272,8 +295,12 @@ internal sealed class DpsPipeline : IDisposable
         bool idleTimeout = _sessionActive && snap.TotalPartyDamage > 0 &&
             !bossAlive &&
             (DateTime.UtcNow - _lastHitUtc).TotalSeconds > SessionIdleSeconds;
+        // Boss HP reset detection: if boss HP >= MaxHp but we've dealt damage, it's a wipe/reset.
+        bool bossHpReset = _sessionActive && _currentTarget is { IsBoss: true, MaxHp: > 0 }
+            && _currentTarget.CurrentHp >= _currentTarget.MaxHp
+            && _currentTarget.TotalDamageReceived > 0;
 
-        if (bossKilled || idleTimeout)
+        if (bossKilled || idleTimeout || bossHpReset)
         {
             _lastSummary = BuildSummary(snap);
             SaveRecord(snap);
@@ -362,6 +389,18 @@ internal sealed class DpsPipeline : IDisposable
             p.CombatScore = score;
             p.ServerId = sid;
             p.ServerName = sname;
+
+            // Attach buff uptime data from the BuffTracker.
+            var buffs = _buffTracker.BuildSnapshot(p.EntityId, snap.ElapsedSeconds);
+            if (buffs.Count > 0)
+            {
+                p.Buffs = buffs.ConvertAll(b => new BuffUptimeDto
+                {
+                    Name = b.Name,
+                    BuffId = b.BuffId,
+                    Uptime = b.Uptime
+                });
+            }
 
             // Display name with server suffix for web upload.
             if (!string.IsNullOrEmpty(sname) && !p.Name.Contains('['))

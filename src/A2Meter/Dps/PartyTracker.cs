@@ -79,9 +79,13 @@ internal sealed class PartyTracker
             // No existing entry — fall through and store at key 0.
         }
 
-        // Preserve existing IsPartyMember flag when upserting identity-only data.
-        if (!member.IsPartyMember && _members.TryGetValue(member.CharacterId, out var existing))
-            member.IsPartyMember = existing.IsPartyMember;
+        // Preserve existing flags when upserting identity-only data.
+        if (_members.TryGetValue(member.CharacterId, out var existing))
+        {
+            if (!member.IsPartyMember) member.IsPartyMember = existing.IsPartyMember;
+            if (!member.IsLookup)      member.IsLookup = existing.IsLookup;
+            if (member.CombatPower == 0 && existing.CombatPower > 0) member.CombatPower = existing.CombatPower;
+        }
 
         _members[member.CharacterId] = member;
         Changed?.Invoke();

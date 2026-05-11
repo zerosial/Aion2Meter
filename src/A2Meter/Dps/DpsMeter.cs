@@ -42,6 +42,29 @@ internal sealed class DpsMeter
         _wallSw.Restart();
     }
 
+    /// Reset meter but preserve the self actor's identity (name/jobCode)
+    /// so the DPS bar reappears immediately on the next hit.
+    public void ResetKeepSelf(int selfEntityId)
+    {
+        ActorAccum? selfAccum = null;
+        if (_actors.TryGetValue(selfEntityId, out var existing))
+        {
+            selfAccum = new ActorAccum
+            {
+                EntityId = selfEntityId,
+                Name = existing.Name,
+                JobCode = existing.JobCode
+            };
+        }
+        _actors.Clear();
+        _byTarget.Clear();
+        _target = null;
+        _sw.Reset();
+        _wallSw.Restart();
+        if (selfAccum != null)
+            _actors[selfEntityId] = selfAccum;
+    }
+
     public void RecordHit(int actorId, int targetId, string name, int jobCode, long damage, uint hitFlags, bool isHeal,
                           string? skillName = null, int extraHits = 0, bool isDot = false, int[]? specs = null)
     {
@@ -127,6 +150,7 @@ internal sealed class DpsMeter
                                      DodgeRate    = s.Hits == 0 ? 0 : (double)s.Evades / s.Hits,
                                      BlockRate    = s.Hits == 0 ? 0 : (double)s.Blocks / s.Hits,
                                      Specs        = s.Specs,
+                                     HitLog       = s.HitLog,
                                  }).ToList(),
             })
             .OrderByDescending(p => p.TotalDamage)
@@ -170,7 +194,22 @@ internal sealed class DpsMeter
         }
 
         a.TotalDamage += damage;
-        if (isDot) a.DotDamage += damage;
+        if (isDot)
+        {
+            a.DotDamage += damage;
+            // DOT ticks don't count as hits (matching decompiled EXE behavior)
+            if (!string.IsNullOrEmpty(skillName))
+            {
+                if (!a.Skills.TryGetValue(skillName, out var ds))
+                {
+                    ds = new SkillAccum { Name = skillName };
+                    a.Skills[skillName] = ds;
+                }
+                ds.Total += damage;
+                ds.HitLog.Add(damage);
+            }
+            return;
+        }
 
         // Per-event: always +1, matching original.
         a.Hits++;
@@ -186,6 +225,7 @@ internal sealed class DpsMeter
             }
             s.Total += damage;
             s.Hits++;
+            s.HitLog.Add(damage);
             if (damage > s.MaxHit)       s.MaxHit = damage;
             if (isCrit)                  s.Crits++;
             if ((hitFlags & 0x01) != 0)  s.Backs++;
@@ -226,5 +266,6 @@ internal sealed class DpsMeter
         public long MultiHits;
         public long MaxHit;
         public int[]? Specs;
+        public List<long> HitLog = new();
     }
 }

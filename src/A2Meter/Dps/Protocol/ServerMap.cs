@@ -28,6 +28,20 @@ internal static class ServerMap
         [2019] = "파프니르", [2020] = "인드나흐", [2021] = "이스할겐",
     };
 
+    public static readonly Dictionary<int, string> ShortNames = BuildShortNames();
+
+    private static Dictionary<int, string> BuildShortNames()
+    {
+        var overrides = new Dictionary<string, string> { ["이스할겐"] = "할겐" };
+        var result = new Dictionary<int, string>();
+        foreach (var (id, name) in Servers)
+            result[id] = overrides.TryGetValue(name, out var s) ? s : (name.Length > 2 ? name[..2] : name);
+        return result;
+    }
+
     public static string GetName(int id) =>
         Servers.TryGetValue(id, out var name) ? name : "";
+
+    public static string GetShortName(int id) =>
+        ShortNames.TryGetValue(id, out var name) ? name : GetName(id);
 }

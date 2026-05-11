@@ -1,0 +1,15 @@
+{
+  "folders": [
+	{
+		"name": "aion2meter",
+		"path": "."
+	},
+	{
+		"path": "../aion"
+	},
+	{
+		"path": "../../../Downloads/Aion2Meter-1.0.5"
+	}
+],
+  "settings": {}
+}

@@ -134,3 +134,5 @@ _NCrunch*
 
 # Environment files
 .env
+
+scratch_decompile

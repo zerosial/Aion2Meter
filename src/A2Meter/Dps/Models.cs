@@ -35,6 +35,7 @@ internal sealed class ActorDps
     public long   DotDamage { get; set; }
     public List<SkillDps>? TopSkills { get; set; }
     public Dictionary<string, int>? SkillLevels { get; set; }
+    public List<BuffUptimeDto>? Buffs { get; set; }
 }
 
 internal sealed class SkillDps
@@ -51,6 +52,7 @@ internal sealed class SkillDps
     public double DodgeRate { get; set; }     // 회피
     public double BlockRate { get; set; }     // 막기
     public int[]? Specs { get; set; }         // 특화 tiers (1-based, sorted ascending)
+    public List<long>? HitLog { get; set; }
 }
 
 internal sealed class MobTarget
@@ -80,4 +82,6 @@ internal sealed class PartyMember
     /// True when confirmed via actual party packet (PartyList/PartyUpdate/PartyAccept),
     /// not just seen nearby via UserInfo.
     public bool   IsPartyMember { get; set; }
+    /// True when this member was added via character lookup (API enrichment).
+    public bool   IsLookup { get; set; }
 }
