@@ -1,203 +1,247 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Text;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using A2Meter.Core;
 
 namespace A2Meter.Forms;
 
-/// Update detail window: shows version, release notes, and a download button.
 internal sealed class UpdateDetailForm : Form
 {
-    [DllImport("user32.dll")] private static extern bool ReleaseCapture();
-    [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+	private sealed class CloseButton : Control
+	{
+		private bool _hover;
 
-    private readonly Version _version;
-    private readonly string _downloadUrl;
-    private readonly Button _btnDownload;
+		private bool _pressed;
 
-    public UpdateDetailForm(Version version, string downloadUrl, string releaseNotes)
-    {
-        _version = version;
-        _downloadUrl = downloadUrl;
+		public CloseButton()
+		{
+			base.Size = new Size(26, 26);
+			DoubleBuffered = true;
+			SetStyle(ControlStyles.UserPaint | ControlStyles.SupportsTransparentBackColor | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, value: true);
+			BackColor = Color.Transparent;
+			Cursor = Cursors.Hand;
+		}
 
-        var theme = AppSettings.Instance.Theme;
-        var fn = AppSettings.Instance.FontName;
-        var fs = AppSettings.Instance.FontSize;
+		protected override void OnMouseEnter(EventArgs e)
+		{
+			_hover = true;
+			Invalidate();
+			base.OnMouseEnter(e);
+		}
 
-        Text = "업데이트";
-        FormBorderStyle = FormBorderStyle.None;
-        ShowInTaskbar = false;
-        TopMost = true;
-        StartPosition = FormStartPosition.CenterScreen;
-        Size = new Size(420, 360);
-        BackColor = theme.BgColor;
-        DoubleBuffered = true;
+		protected override void OnMouseLeave(EventArgs e)
+		{
+			_hover = false;
+			_pressed = false;
+			Invalidate();
+			base.OnMouseLeave(e);
+		}
 
-        // ── Title bar ──
-        var titleBar = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = theme.HeaderColor };
-        titleBar.Paint += (_, e) =>
-        {
-            using var pen = new Pen(theme.BorderColor);
-            e.Graphics.DrawLine(pen, 0, titleBar.Height - 1, titleBar.Width, titleBar.Height - 1);
-        };
-        var lblTitle = new Label
-        {
-            Text = $"v{version} 업데이트",
-            ForeColor = theme.TextColor,
-            Font = new Font(fn, fs + 0.5f, FontStyle.Bold),
-            AutoSize = true,
-            Location = new Point(12, 9),
-            BackColor = Color.Transparent,
-        };
-        titleBar.Controls.Add(lblTitle);
-        titleBar.MouseDown += (_, e) => Drag(e);
-        lblTitle.MouseDown += (_, e) => Drag(e);
+		protected override void OnMouseDown(MouseEventArgs e)
+		{
+			_pressed = true;
+			Invalidate();
+			base.OnMouseDown(e);
+		}
 
-        var btnClose = new CloseButton { Location = new Point(titleBar.Width - 34, 5) };
-        titleBar.Controls.Add(btnClose);
-        titleBar.Resize += (_, _) => btnClose.Location = new Point(titleBar.Width - 34, 5);
-        btnClose.Click += (_, _) => Close();
+		protected override void OnMouseUp(MouseEventArgs e)
+		{
+			_pressed = false;
+			Invalidate();
+			base.OnMouseUp(e);
+		}
 
-        // ── Version info ──
-        var lblVersion = new Label
-        {
-            Text = $"현재: v{AutoUpdater.CurrentVersion}  →  새 버전: v{version}",
-            ForeColor = theme.AccentColor,
-            Font = new Font(fn, fs, FontStyle.Bold),
-            AutoSize = true,
-            Location = new Point(16, 48),
-            BackColor = Color.Transparent,
-        };
+		protected override void OnPaint(PaintEventArgs e)
+		{
+			Graphics graphics = e.Graphics;
+			graphics.SmoothingMode = SmoothingMode.AntiAlias;
+			if (_hover)
+			{
+				using SolidBrush brush = new SolidBrush(Color.FromArgb(_pressed ? 110 : 70, 220, 70, 70));
+				graphics.FillEllipse(brush, 0, 0, base.Width, base.Height);
+			}
+			using Pen pen = new Pen(_hover ? Color.FromArgb(235, 240, 250) : AppSettings.Instance.Theme.TextColor, 1.6f)
+			{
+				StartCap = LineCap.Round,
+				EndCap = LineCap.Round
+			};
+			int num = base.Width / 2;
+			int num2 = base.Height / 2;
+			graphics.DrawLine(pen, num - 5, num2 - 5, num + 5, num2 + 5);
+			graphics.DrawLine(pen, num + 5, num2 - 5, num - 5, num2 + 5);
+		}
+	}
 
-        // ── Release notes ──
-        var lblNotesHeader = new Label
-        {
-            Text = "릴리즈 노트",
-            ForeColor = theme.TextDimColor,
-            Font = new Font(fn, fs - 0.5f, FontStyle.Bold),
-            AutoSize = true,
-            Location = new Point(16, 76),
-            BackColor = Color.Transparent,
-        };
+	private readonly Version _version;
 
-        var txtNotes = new RichTextBox
-        {
-            Text = string.IsNullOrWhiteSpace(releaseNotes) ? "(릴리즈 노트 없음)" : releaseNotes,
-            ReadOnly = true,
-            BorderStyle = BorderStyle.None,
-            BackColor = theme.HeaderColor,
-            ForeColor = theme.TextColor,
-            Font = new Font(fn, fs),
-            Location = new Point(16, 98),
-            Size = new Size(388, 190),
-            ScrollBars = RichTextBoxScrollBars.Vertical,
-        };
+	private readonly string _downloadUrl;
 
-        // ── Download button ──
-        _btnDownload = new Button
-        {
-            Text = "다운로드 및 업데이트",
-            FlatStyle = FlatStyle.Flat,
-            BackColor = theme.AccentColor,
-            ForeColor = Color.FromArgb(20, 24, 36),
-            Font = new Font(fn, fs + 0.5f, FontStyle.Bold),
-            Size = new Size(200, 34),
-            Location = new Point((420 - 200) / 2, 310),
-            Cursor = Cursors.Hand,
-        };
-        _btnDownload.FlatAppearance.BorderSize = 0;
-        _btnDownload.Click += OnDownloadClick;
+	private readonly Button _btnDownload;
 
-        Controls.Add(_btnDownload);
-        Controls.Add(txtNotes);
-        Controls.Add(lblNotesHeader);
-        Controls.Add(lblVersion);
-        Controls.Add(titleBar);
+	protected override CreateParams CreateParams
+	{
+		get
+		{
+			CreateParams createParams = base.CreateParams;
+			createParams.ExStyle |= 136;
+			return createParams;
+		}
+	}
 
-        // Resize handler for notes box
-        Resize += (_, _) =>
-        {
-            txtNotes.Size = new Size(ClientSize.Width - 32, ClientSize.Height - 170);
-            _btnDownload.Location = new Point((ClientSize.Width - _btnDownload.Width) / 2, ClientSize.Height - 50);
-        };
-    }
+	[DllImport("user32.dll")]
+	private static extern bool ReleaseCapture();
 
-    protected override CreateParams CreateParams
-    {
-        get
-        {
-            var cp = base.CreateParams;
-            cp.ExStyle |= Win32Native.WS_EX_TOOLWINDOW | Win32Native.WS_EX_TOPMOST;
-            return cp;
-        }
-    }
+	[DllImport("user32.dll")]
+	private static extern nint SendMessage(nint hWnd, int Msg, nint wParam, nint lParam);
 
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        base.OnPaint(e);
-        using var pen = new Pen(AppSettings.Instance.Theme.BorderColor);
-        e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
-    }
+	public UpdateDetailForm(Version version, string downloadUrl, string releaseNotes)
+	{
+		_version = version;
+		_downloadUrl = downloadUrl;
+		AppSettings.ThemeColors theme = AppSettings.Instance.Theme;
+		string fontName = AppSettings.Instance.FontName;
+		float fontSize = AppSettings.Instance.FontSize;
+		Text = "업데이트";
+		base.FormBorderStyle = FormBorderStyle.None;
+		base.ShowInTaskbar = false;
+		base.TopMost = true;
+		base.StartPosition = FormStartPosition.CenterScreen;
+		base.Size = new Size(420, 360);
+		BackColor = theme.BgColor;
+		DoubleBuffered = true;
+		Panel titleBar = new Panel
+		{
+			Dock = DockStyle.Top,
+			Height = 36,
+			BackColor = theme.HeaderColor
+		};
+		titleBar.Paint += delegate(object? _, PaintEventArgs e)
+		{
+			using Pen pen = new Pen(theme.BorderColor);
+			e.Graphics.DrawLine(pen, 0, titleBar.Height - 1, titleBar.Width, titleBar.Height - 1);
+		};
+		Label label = new Label
+		{
+			Text = $"v{version} 업데이트",
+			ForeColor = theme.TextColor,
+			Font = new Font(fontName, fontSize + 0.5f, FontStyle.Bold),
+			AutoSize = true,
+			Location = new Point(12, 9),
+			BackColor = Color.Transparent
+		};
+		titleBar.Controls.Add(label);
+		titleBar.MouseDown += delegate(object? _, MouseEventArgs e)
+		{
+			Drag(e);
+		};
+		label.MouseDown += delegate(object? _, MouseEventArgs e)
+		{
+			Drag(e);
+		};
+		CloseButton btnClose = new CloseButton
+		{
+			Location = new Point(titleBar.Width - 34, 5)
+		};
+		titleBar.Controls.Add(btnClose);
+		titleBar.Resize += delegate
+		{
+			btnClose.Location = new Point(titleBar.Width - 34, 5);
+		};
+		btnClose.Click += delegate
+		{
+			Close();
+		};
+		Label value = new Label
+		{
+			Text = $"현재: v{AutoUpdater.CurrentVersion}  →  새 버전: v{version}",
+			ForeColor = theme.AccentColor,
+			Font = new Font(fontName, fontSize, FontStyle.Bold),
+			AutoSize = true,
+			Location = new Point(16, 48),
+			BackColor = Color.Transparent
+		};
+		Label value2 = new Label
+		{
+			Text = "릴리즈 노트",
+			ForeColor = theme.TextDimColor,
+			Font = new Font(fontName, fontSize - 0.5f, FontStyle.Bold),
+			AutoSize = true,
+			Location = new Point(16, 76),
+			BackColor = Color.Transparent
+		};
+		RichTextBox txtNotes = new RichTextBox
+		{
+			Text = (string.IsNullOrWhiteSpace(releaseNotes) ? "(릴리즈 노트 없음)" : releaseNotes),
+			ReadOnly = true,
+			BorderStyle = BorderStyle.None,
+			BackColor = theme.HeaderColor,
+			ForeColor = theme.TextColor,
+			Font = new Font(fontName, fontSize),
+			Location = new Point(16, 98),
+			Size = new Size(388, 190),
+			ScrollBars = RichTextBoxScrollBars.Vertical
+		};
+		_btnDownload = new Button
+		{
+			Text = "다운로드 및 업데이트",
+			FlatStyle = FlatStyle.Flat,
+			BackColor = theme.AccentColor,
+			ForeColor = Color.FromArgb(20, 24, 36),
+			Font = new Font(fontName, fontSize + 0.5f, FontStyle.Bold),
+			Size = new Size(200, 34),
+			Location = new Point(110, 310),
+			Cursor = Cursors.Hand
+		};
+		_btnDownload.FlatAppearance.BorderSize = 0;
+		_btnDownload.Click += OnDownloadClick;
+		base.Controls.Add(_btnDownload);
+		base.Controls.Add(txtNotes);
+		base.Controls.Add(value2);
+		base.Controls.Add(value);
+		base.Controls.Add(titleBar);
+		base.Resize += delegate
+		{
+			txtNotes.Size = new Size(base.ClientSize.Width - 32, base.ClientSize.Height - 170);
+			_btnDownload.Location = new Point((base.ClientSize.Width - _btnDownload.Width) / 2, base.ClientSize.Height - 50);
+		};
+	}
 
-    private void Drag(MouseEventArgs e)
-    {
-        if (e.Button != MouseButtons.Left) return;
-        ReleaseCapture();
-        SendMessage(Handle, 0x00A1, (IntPtr)2, IntPtr.Zero);
-    }
+	protected override void OnPaint(PaintEventArgs e)
+	{
+		base.OnPaint(e);
+		using Pen pen = new Pen(AppSettings.Instance.Theme.BorderColor);
+		e.Graphics.DrawRectangle(pen, 0, 0, base.Width - 1, base.Height - 1);
+	}
 
-    private async void OnDownloadClick(object? sender, EventArgs e)
-    {
-        try
-        {
-            _btnDownload.Enabled = false;
-            _btnDownload.Text = "다운로드 중...";
+	private void Drag(MouseEventArgs e)
+	{
+		if (e.Button == MouseButtons.Left)
+		{
+			ReleaseCapture();
+			SendMessage(base.Handle, 161, 2, IntPtr.Zero);
+		}
+	}
 
-            await AutoUpdater.ApplyAsync(_downloadUrl, _version, msg => Console.Error.WriteLine(msg));
-
-            AppSettings.Instance.Save();
-            Environment.Exit(0);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[updater] apply failed: {ex.Message}");
-            _btnDownload.Text = "실패 — 다시 시도";
-            _btnDownload.Enabled = true;
-        }
-    }
-
-    // ─── Close button (same as SettingsPanelForm) ───
-
-    private sealed class CloseButton : Control
-    {
-        private bool _hover, _pressed;
-        public CloseButton()
-        {
-            Size = new Size(26, 26); DoubleBuffered = true;
-            SetStyle(ControlStyles.SupportsTransparentBackColor | ControlStyles.OptimizedDoubleBuffer
-                   | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
-            BackColor = Color.Transparent; Cursor = Cursors.Hand;
-        }
-        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
-        protected override void OnMouseLeave(EventArgs e) { _hover = false; _pressed = false; Invalidate(); base.OnMouseLeave(e); }
-        protected override void OnMouseDown(MouseEventArgs e) { _pressed = true; Invalidate(); base.OnMouseDown(e); }
-        protected override void OnMouseUp(MouseEventArgs e) { _pressed = false; Invalidate(); base.OnMouseUp(e); }
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            var g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias;
-            if (_hover)
-            {
-                using var bg = new SolidBrush(Color.FromArgb(_pressed ? 110 : 70, 220, 70, 70));
-                g.FillEllipse(bg, 0, 0, Width, Height);
-            }
-            var fg = _hover ? Color.FromArgb(235, 240, 250) : AppSettings.Instance.Theme.TextColor;
-            using var pen = new Pen(fg, 1.6f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            int cx = Width / 2, cy = Height / 2;
-            g.DrawLine(pen, cx - 5, cy - 5, cx + 5, cy + 5);
-            g.DrawLine(pen, cx + 5, cy - 5, cx - 5, cy + 5);
-        }
-    }
+	private async void OnDownloadClick(object? sender, EventArgs e)
+	{
+		try
+		{
+			_btnDownload.Enabled = false;
+			_btnDownload.Text = "다운로드 중...";
+			await AutoUpdater.ApplyAsync(_downloadUrl, _version, delegate(string msg)
+			{
+				Console.Error.WriteLine(msg);
+			});
+			AppSettings.Instance.Save();
+			Environment.Exit(0);
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine("[updater] apply failed: " + ex.Message);
+			_btnDownload.Text = "실패 — 다시 시도";
+			_btnDownload.Enabled = true;
+		}
+	}
 }

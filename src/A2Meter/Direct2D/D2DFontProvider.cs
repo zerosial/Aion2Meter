@@ -1,60 +1,62 @@
 using System;
+using System.Collections.Generic;
+using A2Meter.Core;
 using Vortice.DirectWrite;
-using DwFontStyle = Vortice.DirectWrite.FontStyle;
 
 namespace A2Meter.Direct2D;
 
-/// Font provider for DirectWrite. Uses IDWriteFontCollection to enumerate
-/// system fonts by family name, separate from weight selection.
 internal sealed class D2DFontProvider
 {
-    private readonly IDWriteFactory _factory;
-    private readonly IDWriteFontCollection _system;
+	private readonly IDWriteFactory _factory;
 
-    public D2DFontProvider(IDWriteFactory factory)
-    {
-        _factory = factory;
-        _system  = factory.GetSystemFontCollection(false);
-    }
+	private readonly IDWriteFontCollection _system;
 
-    /// Creates a TextFormat with the specified family, weight, and size.
-    public IDWriteTextFormat Create(string family, FontWeight weight, float size)
-    {
-        // Verify family exists; fallback to Malgun Gothic → Segoe UI.
-        string resolved = Resolve(family) ?? Resolve("Malgun Gothic") ?? "Segoe UI";
-        return _factory.CreateTextFormat(resolved, weight, DwFontStyle.Normal, size);
-    }
+	public D2DFontProvider(IDWriteFactory factory)
+	{
+		_factory = factory;
+		_system = factory.GetSystemFontCollection(false);
+	}
 
-    /// UI font shorthand using AppSettings values.
-    public IDWriteTextFormat CreateUi(float size, string? userFont = null, FontWeight? weightOverride = null)
-    {
-        var s = Core.AppSettings.Instance;
-        string family = userFont ?? s.FontName;
-        var weight = weightOverride ?? (FontWeight)s.FontWeight;
-        return Create(family, weight, size);
-    }
+	public IDWriteTextFormat Create(string family, FontWeight weight, float size)
+	{
+		string fontFamilyName = Resolve(family) ?? Resolve("Malgun Gothic") ?? "Segoe UI";
+		return _factory.CreateTextFormat(fontFamilyName, weight, Vortice.DirectWrite.FontStyle.Normal, size);
+	}
 
-    /// Get all DirectWrite font family names for the settings UI.
-    public string[] GetFamilyNames()
-    {
-        int count = (int)_system.FontFamilyCount;
-        var names = new string[count];
-        for (int i = 0; i < count; i++)
-        {
-            using var fam = _system.GetFontFamily((uint)i);
-            using var locNames = fam.FamilyNames;
-            // Prefer en-us, fallback to index 0.
-            locNames.FindLocaleName("en-us", out uint nameIdx);
-            if (nameIdx == uint.MaxValue) nameIdx = 0;
-            names[i] = locNames.GetString(nameIdx);
-        }
-        Array.Sort(names, StringComparer.OrdinalIgnoreCase);
-        return names;
-    }
+	public IDWriteTextFormat CreateUi(float size, string? userFont = null, FontWeight? weightOverride = null)
+	{
+		AppSettings instance = AppSettings.Instance;
+		string family = userFont ?? instance.FontName;
+		FontWeight weight = (FontWeight)(((int?)weightOverride) ?? instance.FontWeight);
+		return Create(family, weight, size);
+	}
 
-    private string? Resolve(string family)
-    {
-        _system.FindFamilyName(family, out uint index);
-        return index != uint.MaxValue ? family : null;
-    }
+	public string[] GetFamilyNames()
+	{
+		int fontFamilyCount = (int)_system.FontFamilyCount;
+		string[] array = new string[fontFamilyCount];
+		for (int i = 0; i < fontFamilyCount; i++)
+		{
+			using IDWriteFontFamily iDWriteFontFamily = _system.GetFontFamily((uint)i);
+			using IDWriteLocalizedStrings iDWriteLocalizedStrings = iDWriteFontFamily.FamilyNames;
+			iDWriteLocalizedStrings.FindLocaleName("en-us", out var index);
+			if (index == uint.MaxValue)
+			{
+				index = 0u;
+			}
+			array[i] = iDWriteLocalizedStrings.GetString(index);
+		}
+		Array.Sort(array, (IComparer<string>?)StringComparer.OrdinalIgnoreCase);
+		return array;
+	}
+
+	private string? Resolve(string family)
+	{
+		_system.FindFamilyName(family, out var index);
+		if (index == uint.MaxValue)
+		{
+			return null;
+		}
+		return family;
+	}
 }

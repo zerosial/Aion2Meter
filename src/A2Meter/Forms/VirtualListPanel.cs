@@ -6,224 +6,291 @@ using A2Meter.Core;
 
 namespace A2Meter.Forms;
 
-/// Pure owner-drawn virtual list. No ListView, no DataGridView.
-/// Caller sets RowCount, handles PaintRow event, done.
 internal sealed class VirtualListPanel : Control
 {
-    private readonly AppSettings.ThemeColors _t = AppSettings.Instance.Theme;
+	private readonly AppSettings.ThemeColors _t = AppSettings.Instance.Theme;
 
-    private int _rowCount;
-    private int _scrollOffset;  // first visible row index
-    private int _selectedIndex = -1;
-    private int _rowHeight = 24;
-    private int _headerHeight = 26;
+	private int _rowCount;
 
-    public int RowCount
-    {
-        get => _rowCount;
-        set { _rowCount = value; _scrollOffset = 0; _selectedIndex = -1; Invalidate(); }
-    }
+	private int _scrollOffset;
 
-    public int RowHeight { get => _rowHeight; set { _rowHeight = value; Invalidate(); } }
-    public int HeaderHeight { get => _headerHeight; set { _headerHeight = value; Invalidate(); } }
-    public int SelectedIndex => _selectedIndex;
+	private int _selectedIndex = -1;
 
-    /// Columns: (header text, width weight, alignment).
-    public (string Text, float Weight, HorizontalAlignment Align)[] Columns { get; set; } = Array.Empty<(string, float, HorizontalAlignment)>();
+	private int _rowHeight = 24;
 
-    /// Paint a single row. Args: (Graphics, rowBounds, columnBounds[], rowIndex, isSelected).
-    public event Action<Graphics, Rectangle, Rectangle[], int, bool>? PaintRow;
+	private int _headerHeight = 26;
 
-    /// Row double-clicked.
-    public event Action<int>? RowDoubleClicked;
+	private const int ScrollBarW = 6;
 
-    public VirtualListPanel()
-    {
-        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
-               | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-        BackColor = _t.BgColor;
-    }
+	private const int ScrollBarPad = 3;
 
-    private int VisibleRows => Math.Max(1, (Height - _headerHeight) / _rowHeight);
-    private int MaxScroll => Math.Max(0, _rowCount - VisibleRows);
-    private const int ScrollBarW = 6;
-    private const int ScrollBarPad = 3;
+	public int RowCount
+	{
+		get
+		{
+			return _rowCount;
+		}
+		set
+		{
+			_rowCount = value;
+			_scrollOffset = 0;
+			_selectedIndex = -1;
+			Invalidate();
+		}
+	}
 
-    protected override void OnMouseWheel(MouseEventArgs e)
-    {
-        int delta = e.Delta > 0 ? -3 : 3;
-        _scrollOffset = Math.Clamp(_scrollOffset + delta, 0, MaxScroll);
-        Invalidate();
-    }
+	public int RowHeight
+	{
+		get
+		{
+			return _rowHeight;
+		}
+		set
+		{
+			_rowHeight = value;
+			Invalidate();
+		}
+	}
 
-    protected override void OnMouseDown(MouseEventArgs e)
-    {
-        Focus();
-        if (e.Button != MouseButtons.Left) return;
+	public int HeaderHeight
+	{
+		get
+		{
+			return _headerHeight;
+		}
+		set
+		{
+			_headerHeight = value;
+			Invalidate();
+		}
+	}
 
-        // Scrollbar thumb drag start?
-        if (e.X >= Width - ScrollBarW - ScrollBarPad * 2 && MaxScroll > 0)
-        {
-            // Page up/down by click position
-            var (ty, th) = ThumbRect();
-            if (e.Y < ty) _scrollOffset = Math.Max(0, _scrollOffset - VisibleRows);
-            else if (e.Y > ty + th) _scrollOffset = Math.Min(MaxScroll, _scrollOffset + VisibleRows);
-            Invalidate();
-            return;
-        }
+	public int SelectedIndex => _selectedIndex;
 
-        int row = HitTestRow(e.Y);
-        if (row >= 0 && row < _rowCount)
-        {
-            _selectedIndex = row;
-            Invalidate();
-        }
-        base.OnMouseDown(e);
-    }
+	public (string Text, float Weight, HorizontalAlignment Align)[] Columns { get; set; } = Array.Empty<(string, float, HorizontalAlignment)>();
 
-    protected override void OnMouseDoubleClick(MouseEventArgs e)
-    {
-        int row = HitTestRow(e.Y);
-        if (row >= 0 && row < _rowCount)
-            RowDoubleClicked?.Invoke(row);
-        base.OnMouseDoubleClick(e);
-    }
+	private int VisibleRows => Math.Max(1, (base.Height - _headerHeight) / _rowHeight);
 
-    protected override void OnKeyDown(KeyEventArgs e)
-    {
-        if (e.KeyCode == Keys.Up && _selectedIndex > 0) { _selectedIndex--; EnsureVisible(_selectedIndex); Invalidate(); }
-        else if (e.KeyCode == Keys.Down && _selectedIndex < _rowCount - 1) { _selectedIndex++; EnsureVisible(_selectedIndex); Invalidate(); }
-        else if (e.KeyCode == Keys.Enter && _selectedIndex >= 0) RowDoubleClicked?.Invoke(_selectedIndex);
-        base.OnKeyDown(e);
-    }
+	private int MaxScroll => Math.Max(0, _rowCount - VisibleRows);
 
-    private int HitTestRow(int y)
-    {
-        if (y < _headerHeight) return -1;
-        return _scrollOffset + (y - _headerHeight) / _rowHeight;
-    }
+	public event Action<Graphics, Rectangle, Rectangle[], int, bool>? PaintRow;
 
-    private void EnsureVisible(int index)
-    {
-        if (index < _scrollOffset) _scrollOffset = index;
-        else if (index >= _scrollOffset + VisibleRows) _scrollOffset = index - VisibleRows + 1;
-        _scrollOffset = Math.Clamp(_scrollOffset, 0, MaxScroll);
-    }
+	public event Action<int>? RowDoubleClicked;
 
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        var g = e.Graphics;
-        int w = Width;
+	public VirtualListPanel()
+	{
+		SetStyle(ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, value: true);
+		BackColor = _t.BgColor;
+	}
 
-        // ── Header ──
-        using (var hBrush = new SolidBrush(_t.HeaderColor))
-            g.FillRectangle(hBrush, 0, 0, w, _headerHeight);
-        using (var bPen = new Pen(_t.BorderColor))
-            g.DrawLine(bPen, 0, _headerHeight - 1, w, _headerHeight - 1);
+	protected override void OnMouseWheel(MouseEventArgs e)
+	{
+		int num = ((e.Delta > 0) ? (-3) : 3);
+		_scrollOffset = Math.Clamp(_scrollOffset + num, 0, MaxScroll);
+		Invalidate();
+	}
 
-        var colRects = ComputeColumnRects(0, 0, w - ScrollBarW - ScrollBarPad * 2, _headerHeight);
-        for (int i = 0; i < Columns.Length && i < colRects.Length; i++)
-        {
-            var cr = colRects[i];
-            var flags = AlignFlag(Columns[i].Align) | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis;
-            var tr = new Rectangle(cr.X + 4, cr.Y, cr.Width - 8, cr.Height);
-            TextRenderer.DrawText(g, Columns[i].Text, Font, tr, _t.TextColor, flags);
-        }
+	protected override void OnMouseDown(MouseEventArgs e)
+	{
+		Focus();
+		if (e.Button != MouseButtons.Left)
+		{
+			return;
+		}
+		if (e.X >= base.Width - 6 - 6 && MaxScroll > 0)
+		{
+			var (num, num2) = ThumbRect();
+			if (e.Y < num)
+			{
+				_scrollOffset = Math.Max(0, _scrollOffset - VisibleRows);
+			}
+			else if (e.Y > num + num2)
+			{
+				_scrollOffset = Math.Min(MaxScroll, _scrollOffset + VisibleRows);
+			}
+			Invalidate();
+		}
+		else
+		{
+			int num3 = HitTestRow(e.Y);
+			if (num3 >= 0 && num3 < _rowCount)
+			{
+				_selectedIndex = num3;
+				Invalidate();
+			}
+			base.OnMouseDown(e);
+		}
+	}
 
-        // ── Rows ──
-        int y = _headerHeight;
-        int visible = VisibleRows;
-        for (int vi = 0; vi < visible; vi++)
-        {
-            int idx = _scrollOffset + vi;
-            if (idx >= _rowCount) break;
+	protected override void OnMouseDoubleClick(MouseEventArgs e)
+	{
+		int num = HitTestRow(e.Y);
+		if (num >= 0 && num < _rowCount)
+		{
+			this.RowDoubleClicked?.Invoke(num);
+		}
+		base.OnMouseDoubleClick(e);
+	}
 
-            bool sel = idx == _selectedIndex;
-            var rowRect = new Rectangle(0, y, w - ScrollBarW - ScrollBarPad * 2, _rowHeight);
+	protected override void OnKeyDown(KeyEventArgs e)
+	{
+		if (e.KeyCode == Keys.Up && _selectedIndex > 0)
+		{
+			_selectedIndex--;
+			EnsureVisible(_selectedIndex);
+			Invalidate();
+		}
+		else if (e.KeyCode == Keys.Down && _selectedIndex < _rowCount - 1)
+		{
+			_selectedIndex++;
+			EnsureVisible(_selectedIndex);
+			Invalidate();
+		}
+		else if (e.KeyCode == Keys.Return && _selectedIndex >= 0)
+		{
+			this.RowDoubleClicked?.Invoke(_selectedIndex);
+		}
+		base.OnKeyDown(e);
+	}
 
-            // Row bg
-            Color bg;
-            if (sel)
-                bg = Color.FromArgb(
-                    Math.Min(255, _t.AccentColor.R / 4 + _t.BgColor.R),
-                    Math.Min(255, _t.AccentColor.G / 4 + _t.BgColor.G),
-                    Math.Min(255, _t.AccentColor.B / 4 + _t.BgColor.B));
-            else if (idx % 2 == 1)
-                bg = Color.FromArgb(
-                    Math.Min(255, _t.HeaderColor.R + 3),
-                    Math.Min(255, _t.HeaderColor.G + 3),
-                    Math.Min(255, _t.HeaderColor.B + 3));
-            else
-                bg = _t.BgColor;
+	private int HitTestRow(int y)
+	{
+		if (y < _headerHeight)
+		{
+			return -1;
+		}
+		return _scrollOffset + (y - _headerHeight) / _rowHeight;
+	}
 
-            using (var brush = new SolidBrush(bg))
-                g.FillRectangle(brush, rowRect);
+	private void EnsureVisible(int index)
+	{
+		if (index < _scrollOffset)
+		{
+			_scrollOffset = index;
+		}
+		else if (index >= _scrollOffset + VisibleRows)
+		{
+			_scrollOffset = index - VisibleRows + 1;
+		}
+		_scrollOffset = Math.Clamp(_scrollOffset, 0, MaxScroll);
+	}
 
-            using (var pen = new Pen(Color.FromArgb(40, _t.BorderColor)))
-                g.DrawLine(pen, 0, y + _rowHeight - 1, rowRect.Right, y + _rowHeight - 1);
+	protected override void OnPaint(PaintEventArgs e)
+	{
+		Graphics graphics = e.Graphics;
+		int width = base.Width;
+		using (SolidBrush brush = new SolidBrush(_t.HeaderColor))
+		{
+			graphics.FillRectangle(brush, 0, 0, width, _headerHeight);
+		}
+		using (Pen pen = new Pen(_t.BorderColor))
+		{
+			graphics.DrawLine(pen, 0, _headerHeight - 1, width, _headerHeight - 1);
+		}
+		Rectangle[] array = ComputeColumnRects(0, 0, width - 6 - 6, _headerHeight);
+		for (int i = 0; i < Columns.Length && i < array.Length; i++)
+		{
+			Rectangle rectangle = array[i];
+			TextFormatFlags flags = AlignFlag(Columns[i].Align) | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis;
+			TextRenderer.DrawText(bounds: new Rectangle(rectangle.X + 4, rectangle.Y, rectangle.Width - 8, rectangle.Height), dc: graphics, text: Columns[i].Text, font: Font, foreColor: _t.TextColor, flags: flags);
+		}
+		int num = _headerHeight;
+		int visibleRows = VisibleRows;
+		for (int j = 0; j < visibleRows; j++)
+		{
+			int num2 = _scrollOffset + j;
+			if (num2 >= _rowCount)
+			{
+				break;
+			}
+			bool flag = num2 == _selectedIndex;
+			Rectangle rectangle2 = new Rectangle(0, num, width - 6 - 6, _rowHeight);
+			Color color = (flag ? Color.FromArgb(Math.Min(255, _t.AccentColor.R / 4 + _t.BgColor.R), Math.Min(255, _t.AccentColor.G / 4 + _t.BgColor.G), Math.Min(255, _t.AccentColor.B / 4 + _t.BgColor.B)) : ((num2 % 2 != 1) ? _t.BgColor : Color.FromArgb(Math.Min(255, _t.HeaderColor.R + 3), Math.Min(255, _t.HeaderColor.G + 3), Math.Min(255, _t.HeaderColor.B + 3))));
+			using (SolidBrush brush2 = new SolidBrush(color))
+			{
+				graphics.FillRectangle(brush2, rectangle2);
+			}
+			using (Pen pen2 = new Pen(Color.FromArgb(40, _t.BorderColor)))
+			{
+				graphics.DrawLine(pen2, 0, num + _rowHeight - 1, rectangle2.Right, num + _rowHeight - 1);
+			}
+			Rectangle[] arg = ComputeColumnRects(0, num, rectangle2.Width, _rowHeight);
+			this.PaintRow?.Invoke(graphics, rectangle2, arg, num2, flag);
+			num += _rowHeight;
+		}
+		if (MaxScroll <= 0)
+		{
+			return;
+		}
+		(int y, int h) tuple = ThumbRect();
+		int item = tuple.y;
+		int item2 = tuple.h;
+		int num3 = width - 6 - 3;
+		using SolidBrush brush3 = new SolidBrush(Color.FromArgb(140, _t.TextDimColor));
+		float num4 = 3f;
+		RectangleF rect = new RectangleF(num3, item, 6f, item2);
+		graphics.SmoothingMode = SmoothingMode.AntiAlias;
+		using GraphicsPath graphicsPath = new GraphicsPath();
+		float num5 = num4 * 2f;
+		if (rect.Height < num5)
+		{
+			graphicsPath.AddEllipse(rect);
+		}
+		else
+		{
+			graphicsPath.AddArc(rect.X, rect.Y, num5, num5, 180f, 90f);
+			graphicsPath.AddArc(rect.Right - num5, rect.Y, num5, num5, 270f, 90f);
+			graphicsPath.AddArc(rect.Right - num5, rect.Bottom - num5, num5, num5, 0f, 90f);
+			graphicsPath.AddArc(rect.X, rect.Bottom - num5, num5, num5, 90f, 90f);
+			graphicsPath.CloseFigure();
+		}
+		graphics.FillPath(brush3, graphicsPath);
+	}
 
-            var cellRects = ComputeColumnRects(0, y, rowRect.Width, _rowHeight);
-            PaintRow?.Invoke(g, rowRect, cellRects, idx, sel);
+	private (int y, int h) ThumbRect()
+	{
+		int num = base.Height - _headerHeight;
+		float num2 = (float)VisibleRows / (float)Math.Max(1, _rowCount);
+		int num3 = Math.Max(20, (int)((float)num * num2));
+		float num4 = (float)_scrollOffset / (float)Math.Max(1, MaxScroll);
+		return (y: _headerHeight + (int)(num4 * (float)(num - num3)), h: num3);
+	}
 
-            y += _rowHeight;
-        }
+	private Rectangle[] ComputeColumnRects(int x0, int y, int totalW, int h)
+	{
+		if (Columns.Length == 0)
+		{
+			return Array.Empty<Rectangle>();
+		}
+		float num = 0f;
+		(string, float, HorizontalAlignment)[] columns = Columns;
+		for (int i = 0; i < columns.Length; i++)
+		{
+			(string, float, HorizontalAlignment) tuple = columns[i];
+			num += tuple.Item2;
+		}
+		if (num <= 0f)
+		{
+			num = 1f;
+		}
+		Rectangle[] array = new Rectangle[Columns.Length];
+		float num2 = x0;
+		for (int j = 0; j < Columns.Length; j++)
+		{
+			float num3 = Columns[j].Weight / num * (float)totalW;
+			array[j] = new Rectangle((int)num2, y, (int)num3, h);
+			num2 += num3;
+		}
+		return array;
+	}
 
-        // ── Scrollbar ──
-        if (MaxScroll > 0)
-        {
-            var (ty, th) = ThumbRect();
-            int sx = w - ScrollBarW - ScrollBarPad;
-            using var brush = new SolidBrush(Color.FromArgb(140, _t.TextDimColor));
-            float r = ScrollBarW / 2f;
-            var rect = new RectangleF(sx, ty, ScrollBarW, th);
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            using var path = new GraphicsPath();
-            float d = r * 2;
-            if (rect.Height < d) { path.AddEllipse(rect); }
-            else
-            {
-                path.AddArc(rect.X, rect.Y, d, d, 180, 90);
-                path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
-                path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
-                path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
-                path.CloseFigure();
-            }
-            g.FillPath(brush, path);
-        }
-    }
-
-    private (int y, int h) ThumbRect()
-    {
-        int trackH = Height - _headerHeight;
-        float visRatio = (float)VisibleRows / Math.Max(1, _rowCount);
-        int th = Math.Max(20, (int)(trackH * visRatio));
-        float scrollRatio = (float)_scrollOffset / Math.Max(1, MaxScroll);
-        int ty = _headerHeight + (int)(scrollRatio * (trackH - th));
-        return (ty, th);
-    }
-
-    private Rectangle[] ComputeColumnRects(int x0, int y, int totalW, int h)
-    {
-        if (Columns.Length == 0) return Array.Empty<Rectangle>();
-        float totalWeight = 0;
-        foreach (var c in Columns) totalWeight += c.Weight;
-        if (totalWeight <= 0) totalWeight = 1;
-
-        var rects = new Rectangle[Columns.Length];
-        float xf = x0;
-        for (int i = 0; i < Columns.Length; i++)
-        {
-            float cw = Columns[i].Weight / totalWeight * totalW;
-            rects[i] = new Rectangle((int)xf, y, (int)cw, h);
-            xf += cw;
-        }
-        return rects;
-    }
-
-    private static TextFormatFlags AlignFlag(HorizontalAlignment a) => a switch
-    {
-        HorizontalAlignment.Right => TextFormatFlags.Right,
-        HorizontalAlignment.Center => TextFormatFlags.HorizontalCenter,
-        _ => TextFormatFlags.Left,
-    };
+	private static TextFormatFlags AlignFlag(HorizontalAlignment a)
+	{
+		return a switch
+		{
+			HorizontalAlignment.Right => TextFormatFlags.Right, 
+			HorizontalAlignment.Center => TextFormatFlags.HorizontalCenter, 
+			_ => TextFormatFlags.Default, 
+		};
+	}
 }

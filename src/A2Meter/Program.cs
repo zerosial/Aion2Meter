@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -7,193 +9,179 @@ using A2Meter.Core;
 using A2Meter.Direct2D;
 using A2Meter.Dps;
 using A2Meter.Forms;
-using D2DColor = Vortice.Mathematics.Color4;
+using Vortice.Mathematics;
 
 namespace A2Meter;
 
 internal static class Program
 {
-    private static Mutex? _mutex;
+	private static Mutex? _mutex;
 
-    [STAThread]
-    private static void Main(string[] args)
-    {
-        try
-        {
-            string envFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
-            EnvLoader.Load(envFile);
-        }
-        catch { /* best effort */ }
+	[STAThread]
+	private static void Main(string[] args)
+	{
+		(string, bool, double, bool) tuple = ParseArgs(args);
+		if (tuple.Item4)
+		{
+			RunDemo();
+			return;
+		}
+		var (text, realtime, speed, _) = tuple;
+		if (text == null)
+		{
+			_mutex = new Mutex(initiallyOwned: true, "A2Meter.SingleInstance.Mutex", out var createdNew);
+			if (!createdNew)
+			{
+				return;
+			}
+		}
+		ApplicationConfiguration.Initialize();
+		Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+		Application.EnableVisualStyles();
+		Application.SetCompatibleTextRenderingDefault(defaultValue: false);
+		AppSettings settings = AppSettings.Instance;
+		OverlayForm overlay = new OverlayForm();
+		try
+		{
+			if (text != null)
+			{
+				overlay.PacketSourceOverride = new PcapReplaySource(text, realtime, speed);
+				overlay.Text = "A2Meter [replay: " + Path.GetFileName(text) + "]";
+				overlay.Tag = Path.GetFileName(text);
+			}
+			overlay.HandleCreated += delegate
+			{
+				HotkeyManager hotkeyManager = new HotkeyManager(overlay);
+				overlay.Hotkeys = hotkeyManager;
+				hotkeyManager.RegisterFromSettings(settings.Shortcuts);
+				Task.Run(async delegate
+				{
+					(Version, string, string)? tuple3 = await AutoUpdater.CheckAsync(delegate(string msg)
+					{
+						Console.Error.WriteLine(msg);
+					});
+					if (tuple3.HasValue)
+					{
+						var (ver, url, notes) = tuple3.Value;
+						overlay.Invoke(delegate
+						{
+							new UpdateToastForm(overlay, ver, url, notes).Show();
+						});
+					}
+				});
+			};
+			using (new TrayManager(overlay, () => settings.OverlayOnlyWhenAion, delegate(bool v)
+			{
+				settings.OverlayOnlyWhenAion = v;
+				settings.SaveDebounced();
+			}))
+			{
+				overlay.AppCloseRequested += delegate
+				{
+					settings.Save();
+					Application.Exit();
+				};
+				Application.Run(overlay);
+			}
+		}
+		finally
+		{
+			if (overlay != null)
+			{
+				((IDisposable)overlay).Dispose();
+			}
+		}
+	}
 
-        var parsed = ParseArgs(args);
+	private static void RunDemo()
+	{
+		ApplicationConfiguration.Initialize();
+		Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+		Application.EnableVisualStyles();
+		Application.SetCompatibleTextRenderingDefault(defaultValue: false);
+		DpsCanvas canvas = new DpsCanvas
+		{
+			Dock = DockStyle.Fill
+		};
+		Form form = new Form
+		{
+			Text = "A2Meter [demo]",
+			FormBorderStyle = FormBorderStyle.Sizable,
+			StartPosition = FormStartPosition.CenterScreen,
+			Size = new System.Drawing.Size(460, 500),
+			BackColor = System.Drawing.Color.FromArgb(8, 11, 20)
+		};
+		form.Controls.Add(canvas);
+		List<DpsCanvas.SkillBar> skills = new List<DpsCanvas.SkillBar>
+		{
+			new DpsCanvas.SkillBar("철벽 방어", 3200000L, 142L, 0.35, 0.38, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L),
+			new DpsCanvas.SkillBar("심판의 일격", 2100000L, 98L, 0.42, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L),
+			new DpsCanvas.SkillBar("도발 강타", 1500000L, 76L, 0.28, 0.18, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L),
+			new DpsCanvas.SkillBar("방패 돌진", 980000L, 54L, 0.31, 0.12, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L),
+			new DpsCanvas.SkillBar("수호의 맹세", 450000L, 32L, 0.15, 0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L)
+		};
+		List<DpsCanvas.PlayerRow> rows = new List<DpsCanvas.PlayerRow>
+		{
+			new DpsCanvas.PlayerRow("수호성", "수호성", 8450000L, 1.0, 352083L, 0.34, 0L, new Color4(0.49f, 0.627f, 0.976f), skills, 42000, 410000, 352083L, 120000L, 0L),
+			new DpsCanvas.PlayerRow("살성", "살성", 7820000L, 0.93, 325833L, 0.48, 0L, new Color4(0.643f, 0.906f, 0.608f), null, 38500, 398000, 325833L, 0L, 0L),
+			new DpsCanvas.PlayerRow("마도성", "마도성", 6950000L, 0.82, 289583L, 0.41, 0L, new Color4(0.718f, 0.549f, 0.949f), null, 35200, 372000, 289583L, 1200000L, 0L),
+			new DpsCanvas.PlayerRow("치유성", "치유성", 2180000L, 0.26, 90833L, 0.22, 4500000L, new Color4(0.906f, 0.812f, 0.49f), null, 31000, 120000, 90833L, 0L, 0L)
+		};
+		long total = 0L;
+		foreach (DpsCanvas.PlayerRow item in rows)
+		{
+			total += item.Damage;
+		}
+		MobTarget target = new MobTarget
+		{
+			Name = "글래스베인",
+			EntityId = 99999,
+			CurrentHp = 18600000L,
+			MaxHp = 26330000L,
+			IsBoss = true
+		};
+		DpsDetailForm detailForm = null;
+		canvas.PlayerRowClicked += delegate(DpsCanvas.PlayerRow row)
+		{
+			if (detailForm == null || detailForm.IsDisposed)
+			{
+				detailForm = new DpsDetailForm();
+				detailForm.Show(form);
+			}
+			detailForm.SetData(row);
+			detailForm.BringToFront();
+		};
+		form.Shown += delegate
+		{
+			canvas.SetData(rows, total, "1:24", target);
+		};
+		Application.Run(form);
+	}
 
-        if (parsed.Demo)
-        {
-            RunDemo();
-            return;
-        }
-
-        var (replayDir, replayRealtime, replaySpeed, _) = parsed;
-
-        if (replayDir is null)
-        {
-            _mutex = new Mutex(true, "A2Meter.SingleInstance.Mutex", out bool createdNew);
-            if (!createdNew) return;
-        }
-
-        // ── WinForms + D2D mode (default) ──
-        ApplicationConfiguration.Initialize();
-        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-
-        var settings = AppSettings.Instance;
-
-        using var overlay = new OverlayForm();
-
-        if (replayDir is not null)
-        {
-            overlay.PacketSourceOverride = new PcapReplaySource(replayDir, realtime: replayRealtime, speed: replaySpeed);
-            overlay.Text = $"A2Meter [replay: {System.IO.Path.GetFileName(replayDir)}]";
-            overlay.Tag  = System.IO.Path.GetFileName(replayDir);
-        }
-
-        overlay.HandleCreated += (_, _) =>
-        {
-            var hk = new HotkeyManager(overlay);
-            overlay.Hotkeys = hk;
-            hk.RegisterFromSettings(settings.Shortcuts);
-
-            // Auto-update check — show toast if available.
-            _ = Task.Run(async () =>
-            {
-                var result = await AutoUpdater.CheckAsync(msg => Console.Error.WriteLine(msg));
-                if (result.HasValue)
-                {
-                    var (ver, url, notes) = result.Value;
-                    overlay.Invoke(() =>
-                    {
-                        var toast = new Forms.UpdateToastForm(overlay, ver, url, notes);
-                        toast.Show();
-                    });
-                }
-            });
-        };
-
-        using var tray = new TrayManager(
-            overlay,
-            getOverlayOnlyWhenAion: () => settings.OverlayOnlyWhenAion,
-            setOverlayOnlyWhenAion: v =>
-            {
-                settings.OverlayOnlyWhenAion = v;
-                settings.SaveDebounced();
-            });
-
-        overlay.AppCloseRequested += (_, _) =>
-        {
-            settings.Save();
-            Application.Exit();
-        };
-
-        Application.Run(overlay);
-    }
-
-    private static void RunDemo()
-    {
-        ApplicationConfiguration.Initialize();
-        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-
-        var canvas = new DpsCanvas { Dock = DockStyle.Fill };
-
-        var form = new Form
-        {
-            Text = "A2Meter [demo]",
-            FormBorderStyle = FormBorderStyle.Sizable,
-            StartPosition = FormStartPosition.CenterScreen,
-            Size = new System.Drawing.Size(460, 500),
-            BackColor = System.Drawing.Color.FromArgb(8, 11, 20),
-        };
-        form.Controls.Add(canvas);
-
-        // Dummy data: boss 1, party 4 (수호성, 살성, 마도성, 치유성)
-        // Colors match original A2Viewer palette.
-        var skills = new List<DpsCanvas.SkillBar>
-        {
-            new("철벽 방어",   3_200_000, 142, 0.35, 0.38),
-            new("심판의 일격", 2_100_000,  98, 0.42, 0.25),
-            new("도발 강타",   1_500_000,  76, 0.28, 0.18),
-            new("방패 돌진",     980_000,  54, 0.31, 0.12),
-            new("수호의 맹세",   450_000,  32, 0.15, 0.05),
-        };
-
-        var rows = new List<DpsCanvas.PlayerRow>
-        {
-            new("수호성",   "수호성", 8_450_000, 1.00, 352_083, 0.34, 0,
-                new D2DColor(0.490f, 0.627f, 0.976f, 1f), skills, 42000, 410_000, 352_083, 120_000),
-            new("살성",    "살성",   7_820_000, 0.93, 325_833, 0.48, 0,
-                new D2DColor(0.643f, 0.906f, 0.608f, 1f), null, 38500, 398_000, 325_833, 0),
-            new("마도성",  "마도성", 6_950_000, 0.82, 289_583, 0.41, 0,
-                new D2DColor(0.718f, 0.549f, 0.949f, 1f), null, 35200, 372_000, 289_583, 1_200_000),
-            new("치유성",  "치유성", 2_180_000, 0.26, 90_833,  0.22, 4_500_000,
-                new D2DColor(0.906f, 0.812f, 0.490f, 1f), null, 31000, 120_000, 90_833, 0),
-        };
-
-        long total = 0;
-        foreach (var r in rows) total += r.Damage;
-
-        var target = new MobTarget
-        {
-            Name = "글래스베인",
-            EntityId = 99999,
-            CurrentHp = 18_600_000,
-            MaxHp = 26_330_000,
-            IsBoss = true,
-        };
-
-        DpsDetailForm? detailForm = null;
-        canvas.PlayerRowClicked += row =>
-        {
-            if (detailForm == null || detailForm.IsDisposed)
-            {
-                detailForm = new DpsDetailForm();
-                detailForm.Show(form);
-            }
-            detailForm.SetData(row);
-            detailForm.BringToFront();
-        };
-
-        form.Shown += (_, _) =>
-        {
-            canvas.SetData(rows, total, "1:24", target);
-        };
-
-        Application.Run(form);
-    }
-
-    /// CLI:
-    ///   A2Meter                                    # live capture
-    ///   A2Meter --replay <session-dir>             # offline replay, realtime
-    ///   A2Meter --replay <dir> --speed 4           # replay 4x faster
-    ///   A2Meter --replay <dir> --fast              # replay as fast as possible
-    ///   A2Meter --demo                              # dummy data preview
-    private static (string? Dir, bool Realtime, double Speed, bool Demo) ParseArgs(string[] args)
-    {
-        string? dir = null;
-        bool realtime = true;
-        double speed = 1.0;
-        bool demo = false;
-        for (int i = 0; i < args.Length; i++)
-        {
-            switch (args[i])
-            {
-                case "--replay": dir = args[++i]; break;
-                case "--speed":  speed = double.Parse(args[++i]); break;
-                case "--fast":   realtime = false; break;
-                case "--demo":   demo = true; break;
-            }
-        }
-        return (dir, realtime, speed, demo);
-    }
+	private static (string? Dir, bool Realtime, double Speed, bool Demo) ParseArgs(string[] args)
+	{
+		string item = null;
+		bool item2 = true;
+		double item3 = 1.0;
+		bool item4 = false;
+		for (int i = 0; i < args.Length; i++)
+		{
+			switch (args[i])
+			{
+			case "--replay":
+				item = args[++i];
+				break;
+			case "--speed":
+				item3 = double.Parse(args[++i]);
+				break;
+			case "--fast":
+				item2 = false;
+				break;
+			case "--demo":
+				item4 = true;
+				break;
+			}
+		}
+		return (Dir: item, Realtime: item2, Speed: item3, Demo: item4);
+	}
 }

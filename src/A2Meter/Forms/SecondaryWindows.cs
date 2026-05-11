@@ -4,59 +4,76 @@ using System.Windows.Forms;
 
 namespace A2Meter.Forms;
 
-/// Owns at most one live instance of each secondary WebViewForm.
-/// Re-opening a window focuses the existing instance instead of creating a duplicate.
 internal sealed class SecondaryWindows : IDisposable
 {
-    private readonly Dictionary<Type, Form> _live = new();
-    private readonly Form _owner;
+	private readonly Dictionary<Type, Form> _live = new Dictionary<Type, Form>();
 
-    public SecondaryWindows(Form owner) => _owner = owner;
+	private readonly Form _owner;
 
-    public T Open<T>() where T : Form, new()
-    {
-        if (_live.TryGetValue(typeof(T), out var existing) && !existing.IsDisposed)
-        {
-            existing.Show();
-            existing.BringToFront();
-            existing.Activate();
-            return (T)existing;
-        }
+	public SecondaryWindows(Form owner)
+	{
+		_owner = owner;
+	}
 
-        var form = new T();
-        _live[typeof(T)] = form;
-        form.FormClosed += (_, _) => _live.Remove(typeof(T));
-        form.Show(_owner);
-        return form;
-    }
+	public T Open<T>() where T : Form, new()
+	{
+		if (_live.TryGetValue(typeof(T), out Form value) && !value.IsDisposed)
+		{
+			value.Show();
+			value.BringToFront();
+			value.Activate();
+			return (T)value;
+		}
+		T val = new T();
+		_live[typeof(T)] = val;
+		val.FormClosed += delegate
+		{
+			_live.Remove(typeof(T));
+		};
+		val.Show(_owner);
+		return val;
+	}
 
-    public void Toggle<T>() where T : Form, new()
-    {
-        if (_live.TryGetValue(typeof(T), out var existing) && !existing.IsDisposed)
-            existing.Close();
-        else
-            Open<T>();
-    }
+	public void Toggle<T>() where T : Form, new()
+	{
+		if (_live.TryGetValue(typeof(T), out Form value) && !value.IsDisposed)
+		{
+			value.Close();
+		}
+		else
+		{
+			Open<T>();
+		}
+	}
 
-    public bool TryGet<T>(out T? form) where T : Form
-    {
-        if (_live.TryGetValue(typeof(T), out var f) && !f.IsDisposed)
-        {
-            form = (T)f;
-            return true;
-        }
-        form = null;
-        return false;
-    }
+	public bool TryGet<T>(out T? form) where T : Form
+	{
+		if (_live.TryGetValue(typeof(T), out Form value) && !value.IsDisposed)
+		{
+			form = (T)value;
+			return true;
+		}
+		form = null;
+		return false;
+	}
 
-    public void CloseAll()
-    {
-        foreach (var f in new List<Form>(_live.Values))
-        {
-            try { f.Close(); } catch { }
-        }
-        _live.Clear();
-    }
+	public void CloseAll()
+	{
+		foreach (Form item in new List<Form>(_live.Values))
+		{
+			try
+			{
+				item.Close();
+			}
+			catch
+			{
+			}
+		}
+		_live.Clear();
+	}
 
-    public void Dispose() => CloseAll();
+	public void Dispose()
+	{
+		CloseAll();
+	}
 }

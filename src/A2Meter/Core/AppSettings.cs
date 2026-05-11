@@ -34,6 +34,7 @@ internal sealed class AppSettings
 
     // ── visual ──
     public int Opacity { get; set; } = 90;       // 0..100
+    public int BarOpacity { get; set; } = 100;    // DPS bar opacity (0..100), separate from background
     public string FontName { get; set; } = "Malgun Gothic";
     public int FontWeight { get; set; } = 400;  // 100~900 (Normal=400, Bold=700)
     public float FontSize { get; set; } = 9f;
@@ -49,6 +50,8 @@ internal sealed class AppSettings
         public string TextPrimary   { get; set; } = "#C8C8D0"; // main text
         public string TextSecondary { get; set; } = "#6E6E80"; // dim text
         public string Accent     { get; set; } = "#4DE8E0";  // accent/highlight
+        public string Elyos      { get; set; } = "#8CD1FF";  // Elyos faction color
+        public string Asmodian   { get; set; } = "#C2A6FF";  // Asmodian faction color
 
         // ── helpers (not serialized) ──
         [JsonIgnore] public System.Drawing.Color BgColor      => ParseHex(Background);
@@ -57,6 +60,8 @@ internal sealed class AppSettings
         [JsonIgnore] public System.Drawing.Color TextColor    => ParseHex(TextPrimary);
         [JsonIgnore] public System.Drawing.Color TextDimColor => ParseHex(TextSecondary);
         [JsonIgnore] public System.Drawing.Color AccentColor  => ParseHex(Accent);
+        [JsonIgnore] public System.Drawing.Color ElyosColor   => ParseHex(Elyos);
+        [JsonIgnore] public System.Drawing.Color AsmodianColor => ParseHex(Asmodian);
 
         public static System.Drawing.Color ParseHex(string hex)
         {
