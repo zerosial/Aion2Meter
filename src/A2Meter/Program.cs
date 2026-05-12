@@ -207,7 +207,8 @@ internal static class Program
 	{
 		try
 		{
-			var dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
+			var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+			var dataDir = Path.Combine(exeDir, "Data");
 			Directory.CreateDirectory(dataDir);
 			
 			var htmlPath = Path.Combine(dataDir, "LogAnalyzer.html");

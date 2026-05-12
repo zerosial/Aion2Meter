@@ -427,7 +427,8 @@ internal sealed class DpsPipeline : IDisposable
         {
             try
             {
-                var dataDir = Path.Combine(AppContext.BaseDirectory, "Data", "combat_logs");
+                var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+                var dataDir = Path.Combine(exeDir, "Data", "combat_logs");
                 Directory.CreateDirectory(dataDir);
                 
                 var safeBossName = string.Join("_", (record.BossName ?? "Field").Split(Path.GetInvalidFileNameChars()));

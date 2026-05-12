@@ -33,8 +33,25 @@ internal sealed class SkillDatabase
 
     public SkillDatabase()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "Data", "game_db.json");
-        if (File.Exists(path)) LoadFromJson(path);
+        var defaultPath = Path.Combine(AppContext.BaseDirectory, "Data", "game_db.json");
+        if (File.Exists(defaultPath))
+        {
+            LoadFromJson(defaultPath);
+            return;
+        }
+
+        if (Core.AppSettings.Instance.AdminMode)
+        {
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+            if (!string.IsNullOrEmpty(exeDir))
+            {
+                var adminPath = Path.Combine(exeDir, "Data", "game_db.json");
+                if (File.Exists(adminPath))
+                {
+                    LoadFromJson(adminPath);
+                }
+            }
+        }
     }
 
     private void LoadFromJson(string path)
@@ -91,7 +108,8 @@ internal sealed class SkillDatabase
             _mobIsBoss[mobCode] = isBoss;
             _mobNames[mobCode] = name;
 
-            var path = Path.Combine(AppContext.BaseDirectory, "Data", "game_db.json");
+            var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+            var path = Path.Combine(exeDir, "Data", "game_db.json");
             try
             {
                 string jsonContent = File.Exists(path)
