@@ -180,7 +180,23 @@ internal sealed class ProtocolPipeline : IDisposable
     {
         if (isBoss == 0 || hp <= 0) return;
         var name = _skills.GetMobName(mobCode);
-        if (name == null || name.StartsWith("M_PD_") || name.Contains("Invisible")) return;
+        if (name == null)
+        {
+            if (Core.AppSettings.Instance.AdminMode)
+            {
+                name = $"[신규보스] 코드_{mobCode}";
+                _skills.AddMobAndSave(mobCode, name, true);
+                Console.WriteLine($"[AdminMode] Auto-registered new boss: {name} (HP: {hp:N0})");
+            }
+            else
+            {
+                return;
+            }
+        }
+        else if (name.StartsWith("M_PD_") || name.Contains("Invisible"))
+        {
+            return;
+        }
 
         var t = new MobTarget
         {

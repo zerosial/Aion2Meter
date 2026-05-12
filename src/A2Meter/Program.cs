@@ -20,13 +20,23 @@ internal static class Program
 	[STAThread]
 	private static void Main(string[] args)
 	{
-		(string, bool, double, bool) tuple = ParseArgs(args);
-		if (tuple.Item4)
+		var tuple = ParseArgs(args);
+		if (tuple.Demo)
 		{
 			RunDemo();
 			return;
 		}
-		var (text, realtime, speed, _) = tuple;
+		var (text, realtime, speed, _, admin) = tuple;
+		var exePath = Environment.ProcessPath;
+		if (!string.IsNullOrEmpty(exePath))
+		{
+			var exeName = Path.GetFileNameWithoutExtension(exePath);
+			if (exeName.Contains("admin", StringComparison.OrdinalIgnoreCase))
+			{
+				admin = true;
+			}
+		}
+		AppSettings.Instance.AdminMode = admin;
 		if (text == null)
 		{
 			_mutex = new Mutex(initiallyOwned: true, "A2Meter.SingleInstance.Mutex", out var createdNew);
@@ -158,12 +168,13 @@ internal static class Program
 		Application.Run(form);
 	}
 
-	private static (string? Dir, bool Realtime, double Speed, bool Demo) ParseArgs(string[] args)
+	private static (string? Dir, bool Realtime, double Speed, bool Demo, bool Admin) ParseArgs(string[] args)
 	{
-		string item = null;
+		string? item = null;
 		bool item2 = true;
 		double item3 = 1.0;
 		bool item4 = false;
+		bool item5 = false;
 		for (int i = 0; i < args.Length; i++)
 		{
 			switch (args[i])
@@ -180,8 +191,11 @@ internal static class Program
 			case "--demo":
 				item4 = true;
 				break;
+			case "--admin":
+				item5 = true;
+				break;
 			}
 		}
-		return (Dir: item, Realtime: item2, Speed: item3, Demo: item4);
+		return (Dir: item, Realtime: item2, Speed: item3, Demo: item4, Admin: item5);
 	}
 }

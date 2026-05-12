@@ -80,8 +80,51 @@ internal sealed class SkillDatabase
                             if (!string.IsNullOrWhiteSpace(s)) _mobNames[id] = s!;
                         }
                     }
-        }
+    }
         catch { /* missing/corrupt DB just means parsers fall back to empty lookups */ }
+    }
+
+    public void AddMobAndSave(int mobCode, string name, bool isBoss)
+    {
+        lock (this)
+        {
+            _mobIsBoss[mobCode] = isBoss;
+            _mobNames[mobCode] = name;
+
+            var path = Path.Combine(AppContext.BaseDirectory, "Data", "game_db.json");
+            try
+            {
+                string jsonContent = File.Exists(path)
+                    ? File.ReadAllText(path)
+                    : "{\"skills\":{},\"buffs\":{},\"dungeons\":{},\"mobs\":{}}";
+
+                var dbDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonContent) ?? new();
+                
+                Dictionary<string, JsonElement> mobsDict = new();
+                if (dbDict.TryGetValue("mobs", out var mobsElement))
+                {
+                    mobsDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(mobsElement.GetRawText()) ?? new();
+                }
+
+                if (!mobsDict.ContainsKey(mobCode.ToString()))
+                {
+                    var newMob = new { name = name, isBoss = isBoss };
+                    mobsDict[mobCode.ToString()] = JsonSerializer.SerializeToElement(newMob);
+                    
+                    dbDict["mobs"] = JsonSerializer.SerializeToElement(mobsDict);
+
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    var updatedJson = JsonSerializer.Serialize(dbDict, options);
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                    File.WriteAllText(path, updatedJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[AdminMode] Failed to save new mob to game_db.json: {ex.Message}");
+            }
+        }
     }
 
     public bool ContainsSkillCode(int code) => _skills.ContainsKey(code) || _buffs.ContainsKey(code);
