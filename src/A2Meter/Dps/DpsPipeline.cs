@@ -422,6 +422,29 @@ internal sealed class DpsPipeline : IDisposable
 
         _history.Save(record);
 
+        // 관리자 모드(AdminMode)인 경우 상세 JSON 전투 로그를 Data/combat_logs/에 영구 덤프
+        if (Core.AppSettings.Instance.AdminMode)
+        {
+            try
+            {
+                var dataDir = Path.Combine(AppContext.BaseDirectory, "Data", "combat_logs");
+                Directory.CreateDirectory(dataDir);
+                
+                var safeBossName = string.Join("_", (record.BossName ?? "Field").Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"combat_{record.Timestamp:yyyyMMdd_HHmmss}_{safeBossName}.json";
+                var filePath = Path.Combine(dataDir, fileName);
+                
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                var jsonString = System.Text.Json.JsonSerializer.Serialize(record, jsonOptions);
+                File.WriteAllText(filePath, jsonString);
+                Console.WriteLine($"[AdminMode] Detailed combat log saved: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[AdminMode] Failed to dump combat log JSON: {ex.Message}");
+            }
+        }
+
         // Upload combat stats to the Node.js backend (boss combat only)
         // Skip field mobs, dummies, and unnamed targets.
         bool isBossCombat = _currentTarget is { IsBoss: true } && !string.IsNullOrEmpty(record.BossName)

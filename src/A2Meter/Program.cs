@@ -37,6 +37,10 @@ internal static class Program
 			}
 		}
 		AppSettings.Instance.AdminMode = admin;
+		if (admin)
+		{
+			ExtractAdminTool();
+		}
 		if (text == null)
 		{
 			_mutex = new Mutex(initiallyOwned: true, "A2Meter.SingleInstance.Mutex", out var createdNew);
@@ -197,5 +201,26 @@ internal static class Program
 			}
 		}
 		return (Dir: item, Realtime: item2, Speed: item3, Demo: item4, Admin: item5);
+	}
+
+	private static void ExtractAdminTool()
+	{
+		try
+		{
+			var dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
+			Directory.CreateDirectory(dataDir);
+			
+			var htmlPath = Path.Combine(dataDir, "LogAnalyzer.html");
+			File.WriteAllText(htmlPath, Dps.Protocol.AdminToolTemplate.HtmlContent);
+			
+			var logsDir = Path.Combine(dataDir, "combat_logs");
+			Directory.CreateDirectory(logsDir);
+			
+			Console.WriteLine($"[AdminMode] Extracted LogAnalyzer.html and created combat_logs folder at: {dataDir}");
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"[AdminMode] Failed to extract admin tool: {ex.Message}");
+		}
 	}
 }
