@@ -48,6 +48,11 @@ jobs:
       run: |
         Remove-Item -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/*.pdb" -Force -ErrorAction SilentlyContinue
 
+    - name: Prepare Admin Executable
+      shell: pwsh
+      run: |
+        Copy-Item -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter.exe" -Destination "publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter_Admin.exe"
+
     - name: Compress Publish Directory
       shell: pwsh
       run: |
@@ -59,6 +64,7 @@ jobs:
         files: |
           publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip
           publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter.exe
+          publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter_Admin.exe
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
         draft: false
