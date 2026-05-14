@@ -41,6 +41,8 @@ internal static class Win32Native
     public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
         int X, int Y, int cx, int cy, uint uFlags);
 
+    public const int WM_MOVING = 0x0216;
+
     public const uint SWP_NOMOVE       = 0x0002;
     public const uint SWP_NOSIZE       = 0x0001;
     public const uint SWP_NOZORDER     = 0x0004;

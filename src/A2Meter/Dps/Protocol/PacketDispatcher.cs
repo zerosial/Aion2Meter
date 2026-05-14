@@ -19,6 +19,7 @@ internal sealed class PacketDispatcher
     private const byte TAG_MOB_SPAWN_1  = 64, TAG_MOB_SPAWN_2  = 54;
     private const byte TAG_GUARD_1      = 3,  TAG_GUARD_2      = 54;
     private const byte TAG_ENTITY_REMOVED_1 = 33, TAG_ENTITY_REMOVED_2 = 141;
+    private const byte TAG_CHAR_LOOKUP_1   = 79, TAG_CHAR_LOOKUP_2   = 54; // 0x4F 0x36
 
     private const uint SENTINEL_SKILL_CODE = 12_250_030u;
     private const int  MIN_PACKET_LENGTH   = 4;
@@ -56,6 +57,8 @@ internal sealed class PacketDispatcher
     public event Action<int, int>?           BossHp;             // (entityId, currentHp)
     public event Action<int, int, int, uint, long, int>? Buff;
         // (entityId, buffId, type, durationMs, timestamp, casterId)
+    public event Action<int, string, int, int, int, int>? CharacterLookup;
+        // (entityId, nickname, serverId, jobCode, level, combatPower)
 
     public PacketDispatcher(SkillDatabase skillDb, Action<string>? logSink = null)
     {
@@ -98,6 +101,7 @@ internal sealed class PacketDispatcher
             any |= TryParseDot   (data, offset, length);
             any |= TryParseBossHp(data, offset, length);
             any |= TryParseBattleStats(data, offset, length);
+            any |= TryParseCharacterLookup(data, offset, length);
 
             if (_dumpUnparsed && !any && length > MIN_PACKET_LENGTH)
             {
@@ -687,6 +691,52 @@ internal sealed class PacketDispatcher
         if (serverId <= 0) return name;
         var sn = GetServerName?.Invoke(serverId);
         return string.IsNullOrEmpty(sn) ? name : $"{name}[{sn}]";
+    }
+
+    // ─── character lookup (캐릭터 조회) ────────────────────────────────
+
+    private bool TryParseCharacterLookup(byte[] data, int offset, int length)
+    {
+        int end = offset + length;
+        int idx = IndexOfTag(data, offset, end, TAG_CHAR_LOOKUP_1, TAG_CHAR_LOOKUP_2);
+        if (idx < 0) return false;
+
+        // tag(2) + padding(2) + nameMarker(0x07)
+        int p = idx + 2 + 2;
+        if (p >= end || data[p] != 7) return false;
+        p++;
+
+        // Name: varint length + UTF-8 bytes
+        uint nameLen = ProtocolUtils.ReadVarint(data, ref p, end);
+        if (nameLen == uint.MaxValue || nameLen < 1 || nameLen > MAX_NAME_LENGTH || p + (int)nameLen > end)
+            return false;
+        string name = ProtocolUtils.DecodeGameString(data, p, (int)nameLen);
+        if (string.IsNullOrEmpty(name)) return false;
+        p += (int)nameLen;
+
+        // jobCode(1) + zeros(3) + 0x01(1) + isSelf(1) + level(1) + zeros(7) + entityId(4) + serverId(2)
+        if (p + 20 > end) return false;
+        int jobCode = data[p]; p++;
+        p += 3; // zeros
+        p++;    // 0x01
+        p++;    // isSelf byte (1=self, 2=other)
+        int level = data[p]; p++;
+        p += 7; // zeros
+        int entityId = data[p] | (data[p + 1] << 8) | (data[p + 2] << 16) | (data[p + 3] << 24); p += 4;
+        int serverId = data[p] | (data[p + 1] << 8);
+
+        // Combat power: at tail-9 position (marker 0x14 + LE32 + 5 trailing zeros)
+        int combatPower = 0;
+        int cpPos = offset + length - 9;
+        if (cpPos > p && cpPos + 5 <= end && data[cpPos] == 0x14)
+        {
+            combatPower = data[cpPos + 1] | (data[cpPos + 2] << 8)
+                        | (data[cpPos + 3] << 16) | (data[cpPos + 4] << 24);
+        }
+
+        string nick = AppendServerName(name, serverId);
+        CharacterLookup?.Invoke(entityId, nick, serverId, jobCode, level, combatPower);
+        return true;
     }
 
     // ─── byte-level helpers ─────────────────────────────────────────────

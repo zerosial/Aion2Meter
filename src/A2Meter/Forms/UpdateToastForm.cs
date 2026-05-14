@@ -30,6 +30,7 @@ internal sealed class UpdateToastForm : Form
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         TopMost = true;
+        Owner = parent;
         StartPosition = FormStartPosition.Manual;
         Size = new Size(260, 36);
         BackColor = theme.HeaderColor;

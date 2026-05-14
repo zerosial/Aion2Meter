@@ -11,11 +11,20 @@ namespace A2Meter.Core;
 
 /// Checks GitHub releases for a newer version. Download + replace is
 /// triggered only after the user confirms via the toast.
+///
+/// 업데이트 적용 시 별도 A2Updater.exe를 실행하여 본체 교체를 위임.
+/// A2Updater.exe는 %APPDATA%\A2Meter\A2Updater.exe에 배치됨.
 internal static class AutoUpdater
 {
     private const string RepoOwner = "a2meter";
     private const string RepoName = "Aion2Meter";
     private const string AssetName = "A2Meter.exe";
+    private const string UpdaterAssetName = "A2Updater.exe";
+    private const string UpdaterReleaseTag = "updater-v1";
+
+    private static readonly string UpdaterDir =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "A2Meter");
+    private static readonly string UpdaterPath = Path.Combine(UpdaterDir, "A2Updater.exe");
 
     private static readonly HttpClient Http = new()
     {
@@ -25,6 +34,37 @@ internal static class AutoUpdater
 
     public static Version CurrentVersion =>
         Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
+
+    /// 본체 시작 시 호출 — 업데이터가 appdata에 없으면 GitHub에서 다운로드.
+    public static async Task EnsureUpdaterAsync(Action<string>? log = null)
+    {
+        try
+        {
+            if (File.Exists(UpdaterPath)) return;
+
+            log?.Invoke("[updater] A2Updater.exe not found, downloading...");
+            Directory.CreateDirectory(UpdaterDir);
+
+            var release = await GetReleaseByTagAsync(UpdaterReleaseTag);
+            if (release?.Assets == null) return;
+
+            string? updaterUrl = null;
+            foreach (var a in release.Assets)
+                if (string.Equals(a.Name, UpdaterAssetName, StringComparison.OrdinalIgnoreCase))
+                { updaterUrl = a.BrowserDownloadUrl; break; }
+
+            if (updaterUrl == null) { log?.Invoke("[updater] updater asset not found in release"); return; }
+
+            using var stream = await Http.GetStreamAsync(updaterUrl);
+            using var fs = File.Create(UpdaterPath);
+            await stream.CopyToAsync(fs);
+            log?.Invoke($"[updater] A2Updater.exe deployed to {UpdaterPath}");
+        }
+        catch (Exception ex)
+        {
+            log?.Invoke($"[updater] ensure updater failed: {ex.Message}");
+        }
+    }
 
     /// Check only — returns (remoteVersion, downloadUrl, releaseNotes) or null.
     public static async Task<(Version Version, string Url, string Notes)?> CheckAsync(Action<string>? log = null)
@@ -62,45 +102,40 @@ internal static class AutoUpdater
         }
     }
 
-    /// Download the new exe and launch the replacer script.
-    public static async Task ApplyAsync(string downloadUrl, Version version, Action<string>? log = null)
+    /// 업데이터를 실행하여 본체를 교체. 호출 후 본체는 즉시 종료해야 함.
+    public static void LaunchUpdaterAndExit(string downloadUrl, Action<string>? log = null)
     {
-        log?.Invoke($"[updater] downloading {downloadUrl}...");
-        var tempPath = Path.Combine(Path.GetTempPath(), $"A2Meter_update_{version}.exe");
-        using (var stream = await Http.GetStreamAsync(downloadUrl))
-        using (var fs = File.Create(tempPath))
-            await stream.CopyToAsync(fs);
-
         var currentExe = Environment.ProcessPath!;
-        var batPath = Path.Combine(Path.GetTempPath(), "a2meter_update.bat");
-        var bat = $"""
-            @echo off
-            timeout /t 2 /nobreak >nul
-            :retry
-            del "{currentExe}" 2>nul
-            if exist "{currentExe}" (
-                timeout /t 1 /nobreak >nul
-                goto retry
-            )
-            move /Y "{tempPath}" "{currentExe}"
-            start "" "{currentExe}"
-            del "%~f0"
-            """;
-        File.WriteAllText(batPath, bat);
+        var pid = Environment.ProcessId;
+
+        if (!File.Exists(UpdaterPath))
+        {
+            log?.Invoke("[updater] A2Updater.exe not found — cannot update");
+            return;
+        }
+
+        log?.Invoke($"[updater] launching A2Updater (pid={pid}, target={currentExe})");
 
         Process.Start(new ProcessStartInfo
         {
-            FileName = batPath,
-            CreateNoWindow = true,
+            FileName = UpdaterPath,
+            Arguments = $"--target \"{currentExe}\" --url \"{downloadUrl}\" --pid {pid}",
             UseShellExecute = false,
-            WindowStyle = ProcessWindowStyle.Hidden,
+            CreateNoWindow = true,
         });
-        log?.Invoke("[updater] update script launched");
     }
 
     private static async Task<GitHubRelease?> GetLatestReleaseAsync()
     {
         var url = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
+        var resp = await Http.GetAsync(url);
+        if (!resp.IsSuccessStatusCode) return null;
+        return await resp.Content.ReadFromJsonAsync<GitHubRelease>();
+    }
+
+    private static async Task<GitHubRelease?> GetReleaseByTagAsync(string tag)
+    {
+        var url = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/tags/{tag}";
         var resp = await Http.GetAsync(url);
         if (!resp.IsSuccessStatusCode) return null;
         return await resp.Content.ReadFromJsonAsync<GitHubRelease>();

@@ -16,20 +16,34 @@ internal sealed class DpsMeter
 {
     private readonly Dictionary<int, ActorAccum> _actors = new();
     private readonly Dictionary<int, Dictionary<int, ActorAccum>> _byTarget = new();
-    private readonly Stopwatch _sw = new();
-    private readonly Stopwatch _wallSw = Stopwatch.StartNew();
     private MobTarget? _target;
 
-    public bool IsRunning => _sw.IsRunning;
+    // ── Elapsed time tracking (A2Power model: freezes at last hit) ──
+    private bool     _isRunning;
+    private DateTime _combatStart;
+    private DateTime _lastDamageTime;
+    private double   _accumulatedSec;   // accumulated across Stop/Start cycles
+    private readonly Stopwatch _wallSw = Stopwatch.StartNew();
+
+    public bool IsRunning => _isRunning;
 
     public void Start()
     {
-        if (!_sw.IsRunning) _sw.Start();
+        if (!_isRunning)
+        {
+            _isRunning = true;
+            _combatStart = DateTime.UtcNow;
+            _lastDamageTime = _combatStart;
+        }
     }
 
     public void Stop()
     {
-        _sw.Stop();
+        if (_isRunning)
+        {
+            _accumulatedSec += (_lastDamageTime - _combatStart).TotalSeconds;
+            _isRunning = false;
+        }
         _wallSw.Stop();
     }
 
@@ -38,8 +52,27 @@ internal sealed class DpsMeter
         _actors.Clear();
         _byTarget.Clear();
         _target = null;
-        _sw.Reset();
+        _isRunning = false;
+        _accumulatedSec = 0;
         _wallSw.Restart();
+    }
+
+    /// Reset but keep self actor's identity (name/jobCode) so the row persists.
+    public void ResetKeepSelf(int selfEntityId)
+    {
+        ActorAccum? self = null;
+        if (_actors.TryGetValue(selfEntityId, out var s))
+            self = new ActorAccum { EntityId = selfEntityId, Name = s.Name, JobCode = s.JobCode };
+
+        _actors.Clear();
+        _byTarget.Clear();
+        _target = null;
+        _isRunning = false;
+        _accumulatedSec = 0;
+        _wallSw.Restart();
+
+        if (self != null)
+            _actors[selfEntityId] = self;
     }
 
     public void RecordHit(int actorId, int targetId, string name, int jobCode, long damage, uint hitFlags, bool isHeal,
@@ -47,7 +80,8 @@ internal sealed class DpsMeter
     {
         var actor = GetOrCreate(_actors, actorId, name, jobCode);
         UpdateIdentity(actor, name, jobCode);
-        if (!_sw.IsRunning) Start();
+        if (!_isRunning) Start();
+        _lastDamageTime = DateTime.UtcNow;
 
         Apply(actor, damage, hitFlags, isHeal, skillName, extraHits, isDot, specs);
 
@@ -90,7 +124,10 @@ internal sealed class DpsMeter
 
     private DpsSnapshot Build(IEnumerable<ActorAccum> actors, MobTarget? target)
     {
-        double elapsed     = _sw.Elapsed.TotalSeconds;
+        // Elapsed freezes at last hit time (A2Power: _lastDamageTime - _combatStart).
+        double elapsed = _isRunning
+            ? _accumulatedSec + (_lastDamageTime - _combatStart).TotalSeconds
+            : _accumulatedSec;
         double wallElapsed = _wallSw.Elapsed.TotalSeconds;
 
         var list = actors.ToList();
@@ -127,6 +164,7 @@ internal sealed class DpsMeter
                                      DodgeRate    = s.Hits == 0 ? 0 : (double)s.Evades / s.Hits,
                                      BlockRate    = s.Hits == 0 ? 0 : (double)s.Blocks / s.Hits,
                                      Specs        = s.Specs,
+                                     HitLog       = s.HitLog,
                                  }).ToList(),
             })
             .OrderByDescending(p => p.TotalDamage)
@@ -170,7 +208,23 @@ internal sealed class DpsMeter
         }
 
         a.TotalDamage += damage;
-        if (isDot) a.DotDamage += damage;
+
+        // DoT ticks: add damage only — don't count as hits or pollute stat rates.
+        if (isDot)
+        {
+            a.DotDamage += damage;
+            if (!string.IsNullOrEmpty(skillName))
+            {
+                if (!a.Skills.TryGetValue(skillName, out var sd))
+                {
+                    sd = new SkillAccum { Name = skillName };
+                    a.Skills[skillName] = sd;
+                }
+                sd.Total += damage;
+                sd.HitLog.Add(damage);
+            }
+            return;
+        }
 
         // Per-event: always +1, matching original.
         a.Hits++;
@@ -186,6 +240,7 @@ internal sealed class DpsMeter
             }
             s.Total += damage;
             s.Hits++;
+            s.HitLog.Add(damage);
             if (damage > s.MaxHit)       s.MaxHit = damage;
             if (isCrit)                  s.Crits++;
             if ((hitFlags & 0x01) != 0)  s.Backs++;
@@ -226,5 +281,6 @@ internal sealed class DpsMeter
         public long MultiHits;
         public long MaxHit;
         public int[]? Specs;
+        public List<long> HitLog = new();
     }
 }

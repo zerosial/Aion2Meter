@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using A2Meter.Dps;
+using A2Meter.Dps.Protocol;
 using Vortice.DCommon;
 using Vortice.Direct2D1;
 using Vortice.DirectWrite;
@@ -38,7 +39,8 @@ internal sealed class DpsCanvas : Control
         long           DotDamage = 0,
         int            ServerId = 0,
         string         ServerName = "",
-        Dictionary<string, int>? SkillLevels = null);
+        Dictionary<string, int>? SkillLevels = null,
+        IReadOnlyList<Dps.BuffUptime>? Buffs = null);
 
     public sealed record SkillBar(
         string Name,
@@ -53,7 +55,8 @@ internal sealed class DpsCanvas : Control
         double DodgeRate     = 0,
         double BlockRate     = 0,
         long   MaxHit        = 0,
-        int[]? Specs         = null);
+        int[]? Specs         = null,
+        IReadOnlyList<long>? HitLog = null);
 
     public sealed record TargetInfo(string Name, long CurrentHp, long MaxHp);
 
@@ -100,8 +103,8 @@ internal sealed class DpsCanvas : Control
     private SessionSummary? _summary;
     private ID2D1SolidColorBrush? _brushHpBg;
     private ID2D1SolidColorBrush? _brushHpFill;
-    private ID2D1SolidColorBrush? _brushNameAsmo;   // 마족 (1xxx) 하늘색
-    private ID2D1SolidColorBrush? _brushNameElyos;  // 천족 (2xxx) 연보라
+    private ID2D1SolidColorBrush? _brushNameElyos;  // 천족 (1xxx) 하늘색
+    private ID2D1SolidColorBrush? _brushNameAsmo;   // 마족 (2xxx) 연보라
 
     /// Fired when the user clicks a player row. Passes the clicked PlayerRow.
     public event Action<PlayerRow>? PlayerRowClicked;
@@ -137,7 +140,7 @@ internal sealed class DpsCanvas : Control
         Invalidate();
     }
 
-    /// Compact mode flag (unused in DpsCanvas rendering now — compact uses CompactOverlayForm).
+    /// Compact mode flag (unused in DpsCanvas rendering now — compact is handled by OverlayRenderer).
     public bool CompactMode { get; set; }
 
     public DpsCanvas()
@@ -522,7 +525,7 @@ internal sealed class DpsCanvas : Control
                 _ => _brushTextBright!,
             };
             string displayName = AnonymousMode && !string.IsNullOrEmpty(row.JobIconKey)
-                ? (string.IsNullOrEmpty(row.ServerName) ? row.JobIconKey : $"{row.JobIconKey}[{row.ServerName}]")
+                ? AnonName(row)
                 : row.Name;
 
             var settings = Core.AppSettings.Instance;
@@ -604,16 +607,6 @@ internal sealed class DpsCanvas : Control
         if (_rows.Count == 0)
         {
             if (_summary != null) DrawSummary(dc, startY);
-            else
-            {
-                float cy = ClientSize.Height / 2 - 12;
-                float cw = ClientSize.Width - PadX * 2;
-                var emptyLayout = _ctx!.DWriteFactory.CreateTextLayout(
-                    "waiting for combat...", _fontSmall!, cw, 24);
-                emptyLayout.TextAlignment = TextAlignment.Center;
-                dc.DrawTextLayout(new Vector2(PadX, cy), emptyLayout, _brushTextDim!);
-                emptyLayout.Dispose();
-            }
         }
     }
 
@@ -743,6 +736,16 @@ internal sealed class DpsCanvas : Control
         using var brush = dc.CreateSolidColorBrush(ParseSlotColor(slot.Color));
         dc.DrawText(text, font, new Rect(x, y, w, h), brush,
             DrawTextOptions.None, MeasuringMode.Natural);
+    }
+
+    private string AnonName(PlayerRow row)
+    {
+        if (CompactMode)
+        {
+            string job = row.JobIconKey.Length > 2 ? row.JobIconKey[..2] : row.JobIconKey;
+            return row.ServerId <= 0 ? job : $"{job}[{ServerMap.GetShortName(row.ServerId)}]";
+        }
+        return row.ServerId <= 0 ? row.JobIconKey : $"{row.JobIconKey}[{row.ServerName}]";
     }
 
     private static D2DColor ParseSlotColor(string hex)

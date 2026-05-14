@@ -1,1698 +1,1999 @@
 {
   "검성": [
     {
-      "key": "active:검기 난무",
-      "name": "검기 난무",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_034.png"
-    },
-    {
-      "key": "active:공중 결박",
-      "name": "공중 결박",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_015.png"
-    },
-    {
-      "key": "active:내려찍기",
-      "name": "내려찍기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_017.png"
-    },
-    {
-      "key": "active:도약 찍기",
-      "name": "도약 찍기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_019.png"
-    },
-    {
-      "key": "active:돌진 일격",
-      "name": "돌진 일격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_036.png"
-    },
-    {
-      "key": "active:발목 베기",
-      "name": "발목 베기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_020.png"
-    },
-    {
-      "key": "active:분쇄 파동",
-      "name": "분쇄 파동",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_005.png"
-    },
-    {
+      "id": 11020000,
       "key": "active:예리한 일격",
       "name": "예리한 일격",
       "skillType": "active",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_002.png"
     },
     {
-      "key": "active:유린의 검",
-      "name": "유린의 검",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_028.png"
-    },
-    {
+      "id": 11010000,
       "key": "active:절단의 맹타",
       "name": "절단의 맹타",
       "skillType": "active",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_001.png"
     },
     {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
+      "id": 11190000,
+      "key": "active:도약 찍기",
+      "name": "도약 찍기",
       "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_019.png"
     },
     {
+      "id": 11290000,
+      "key": "active:유린의 검",
+      "name": "유린의 검",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_028.png"
+    },
+    {
+      "id": 11170000,
+      "key": "active:내려찍기",
+      "name": "내려찍기",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_017.png"
+    },
+    {
+      "id": 11280000,
+      "key": "active:검기 난무",
+      "name": "검기 난무",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_034.png"
+    },
+    {
+      "id": 11200000,
+      "key": "active:발목 베기",
+      "name": "발목 베기",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_020.png"
+    },
+    {
+      "id": 11050000,
+      "key": "active:분쇄 파동",
+      "name": "분쇄 파동",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_005.png"
+    },
+    {
+      "id": 11360000,
+      "key": "active:돌진 일격",
+      "name": "돌진 일격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_036.png"
+    },
+    {
+      "id": 11300000,
+      "key": "active:공중 결박",
+      "name": "공중 결박",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_015.png"
+    },
+    {
+      "id": 11100000,
       "key": "active:파멸의 맹타",
       "name": "파멸의 맹타",
       "skillType": "active",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_010.png"
     },
     {
-      "key": "passive:공격 준비",
-      "name": "공격 준비",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_005.png"
+      "id": 11260000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
     },
     {
-      "key": "passive:노련한 반격",
-      "name": "노련한 반격",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:보호의 갑옷",
-      "name": "보호의 갑옷",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_002.png"
-    },
-    {
-      "key": "passive:살기 파열",
-      "name": "살기 파열",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_010.png"
-    },
-    {
-      "key": "passive:생존 의지",
-      "name": "생존 의지",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
-    },
-    {
+      "id": 11710000,
       "key": "passive:생존 자세",
       "name": "생존 자세",
       "skillType": "passive",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_001.png"
     },
     {
-      "key": "passive:약점 파악",
-      "name": "약점 파악",
+      "id": 11720000,
+      "key": "passive:보호의 갑옷",
+      "name": "보호의 갑옷",
       "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_004.png"
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_002.png"
     },
     {
-      "key": "passive:충격 적중",
-      "name": "충격 적중",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_006.png"
-    },
-    {
-      "key": "passive:파괴 충동",
-      "name": "파괴 충동",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_007.png"
-    },
-    {
+      "id": 11730000,
       "key": "passive:피의 흡수",
       "name": "피의 흡수",
       "skillType": "passive",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_003.png"
     },
     {
-      "key": "stigma:강습 일격",
-      "name": "강습 일격",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:강제 결박",
-      "name": "강제 결박",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_043.png"
-    },
-    {
-      "key": "stigma:격노 폭발",
-      "name": "격노 폭발",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_039.png"
-    },
-    {
-      "key": "stigma:균형의 갑옷",
-      "name": "균형의 갑옷",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_013.png"
-    },
-    {
-      "key": "stigma:근성",
-      "name": "근성",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_038.png"
-    },
-    {
-      "key": "stigma:돌격 자세",
-      "name": "돌격 자세",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_040.png"
-    },
-    {
-      "key": "stigma:분노의 파동",
-      "name": "분노의 파동",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_007.png"
-    },
-    {
-      "key": "stigma:분쇄 돌진",
-      "name": "분쇄 돌진",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_045.png"
-    },
-    {
-      "key": "stigma:지켈의 축복",
-      "name": "지켈의 축복",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_024.png"
-    },
-    {
-      "key": "stigma:집중 막기",
-      "name": "집중 막기",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_011.png"
-    },
-    {
-      "key": "stigma:칼날 날리기",
-      "name": "칼날 날리기",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_008.png"
-    },
-    {
-      "key": "stigma:파동의 갑주",
-      "name": "파동의 갑주",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_041.png"
-    },
-    {
-      "key": "stigma:흡혈의 검",
-      "name": "흡혈의 검",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_034.png"
-    }
-  ],
-  "궁성": [
-    {
-      "key": "active:광풍 화살",
-      "name": "광풍 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_011.png"
-    },
-    {
-      "key": "active:속사",
-      "name": "속사",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_034.png"
-    },
-    {
-      "key": "active:송곳 화살",
-      "name": "송곳 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_005.png"
-    },
-    {
-      "key": "active:올가미 화살",
-      "name": "올가미 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_013.png"
-    },
-    {
-      "key": "active:저격",
-      "name": "저격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_001.png"
-    },
-    {
-      "key": "active:제압 화살",
-      "name": "제압 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_007.png"
-    },
-    {
-      "key": "active:조준 화살",
-      "name": "조준 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_002.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:파열 화살",
-      "name": "파열 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_008.png"
-    },
-    {
-      "key": "active:폭발의 덫",
-      "name": "폭발의 덫",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_017.png"
-    },
-    {
-      "key": "active:표적 화살",
-      "name": "표적 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_031.png"
-    },
-    {
-      "key": "active:화살 난사",
-      "name": "화살 난사",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_033.png"
-    },
-    {
-      "key": "passive:경계의 눈",
-      "name": "경계의 눈",
+      "id": 11740000,
+      "key": "passive:약점 파악",
+      "name": "약점 파악",
       "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_004.png"
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_004.png"
     },
     {
-      "key": "passive:근접 사격",
-      "name": "근접 사격",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_013.png"
-    },
-    {
-      "key": "passive:바람의 활력",
-      "name": "바람의 활력",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_006.png"
-    },
-    {
-      "key": "passive:사냥꾼의 결의",
-      "name": "사냥꾼의 결의",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_011.png"
-    },
-    {
-      "key": "passive:사냥꾼의 혼",
-      "name": "사냥꾼의 혼",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:속박의 눈",
-      "name": "속박의 눈",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:저항의 결의",
-      "name": "저항의 결의",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_012.png"
-    },
-    {
-      "key": "passive:집중 포화",
-      "name": "집중 포화",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_003.png"
-    },
-    {
-      "key": "passive:집중의 눈",
-      "name": "집중의 눈",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_001.png"
-    },
-    {
-      "key": "passive:회생의 계약",
-      "name": "회생의 계약",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
-    },
-    {
-      "key": "stigma:강습 강타",
-      "name": "강습 강타",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:결박의 덫",
-      "name": "결박의 덫",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_018.png"
-    },
-    {
-      "key": "stigma:그리폰 화살",
-      "name": "그리폰 화살",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_006.png"
-    },
-    {
-      "key": "stigma:기습 차기",
-      "name": "기습 차기",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_012.png"
-    },
-    {
-      "key": "stigma:대자연의 숨결",
-      "name": "대자연의 숨결",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_035.png"
-    },
-    {
-      "key": "stigma:바이젤의 권능",
-      "name": "바이젤의 권능",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_022.png"
-    },
-    {
-      "key": "stigma:봉인 화살",
-      "name": "봉인 화살",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_016.png"
-    },
-    {
-      "key": "stigma:은신",
-      "name": "은신",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_019.png"
-    },
-    {
-      "key": "stigma:지원 사격",
-      "name": "지원 사격",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_038.png"
-    },
-    {
-      "key": "stigma:축복의 활",
-      "name": "축복의 활",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_030.png"
-    },
-    {
-      "key": "stigma:폭발 화살",
-      "name": "폭발 화살",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_023.png"
-    },
-    {
-      "key": "stigma:화살 폭풍",
-      "name": "화살 폭풍",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_026.png"
-    },
-    {
-      "key": "stigma:환영 화살",
-      "name": "환영 화살",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_015.png"
-    }
-  ],
-  "마도성": [
-    {
-      "key": "active:겨울의 속박",
-      "name": "겨울의 속박",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_011.png"
-    },
-    {
-      "key": "active:불꽃 작살",
-      "name": "불꽃 작살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_004.png"
-    },
-    {
-      "key": "active:불꽃 폭발",
-      "name": "불꽃 폭발",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_005.png"
-    },
-    {
-      "key": "active:불꽃 화살",
-      "name": "불꽃 화살",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_020.png"
-    },
-    {
-      "key": "active:빙결",
-      "name": "빙결",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_015.png"
-    },
-    {
-      "key": "active:빙결 폭발",
-      "name": "빙결 폭발",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_022.png"
-    },
-    {
-      "key": "active:얼음 사슬",
-      "name": "얼음 사슬",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_009.png"
-    },
-    {
-      "key": "active:지옥의 화염",
-      "name": "지옥의 화염",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_006.png"
-    },
-    {
-      "key": "active:집중의 기원",
-      "name": "집중의 기원",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_028.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:혹한의 바람",
-      "name": "혹한의 바람",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_025.png"
-    },
-    {
-      "key": "active:화염 난사",
-      "name": "화염 난사",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_001.png"
-    },
-    {
-      "key": "passive:강화의 은혜",
-      "name": "강화의 은혜",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:냉기 소환",
-      "name": "냉기 소환",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_003.png"
-    },
-    {
-      "key": "passive:냉기의 로브",
-      "name": "냉기의 로브",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_005.png"
-    },
-    {
-      "key": "passive:대지의 로브",
-      "name": "대지의 로브",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_006.png"
-    },
-    {
-      "key": "passive:불꽃의 로브",
-      "name": "불꽃의 로브",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_004.png"
-    },
-    {
-      "key": "passive:불의 표식",
-      "name": "불의 표식",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_002.png"
-    },
-    {
-      "key": "passive:생기 증발",
-      "name": "생기 증발",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:저항의 은혜",
-      "name": "저항의 은혜",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_038.png"
-    },
-    {
-      "key": "passive:정기 흡수",
-      "name": "정기 흡수",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_001.png"
-    },
-    {
-      "key": "passive:회생의 계약",
-      "name": "회생의 계약",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
-    },
-    {
-      "key": "stigma:강습 폭격",
-      "name": "강습 폭격",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:강철 보호막",
-      "name": "강철 보호막",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_016.png"
-    },
-    {
-      "key": "stigma:냉기 폭풍",
-      "name": "냉기 폭풍",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_019.png"
-    },
-    {
-      "key": "stigma:동면",
-      "name": "동면",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_041.png"
-    },
-    {
-      "key": "stigma:루미엘의 공간",
-      "name": "루미엘의 공간",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_027.png"
-    },
-    {
-      "key": "stigma:불의 장벽",
-      "name": "불의 장벽",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_039.png"
-    },
-    {
-      "key": "stigma:빙설의 갑주",
-      "name": "빙설의 갑주",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_021.png"
-    },
-    {
-      "key": "stigma:빙하 강타",
-      "name": "빙하 강타",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_012.png"
-    },
-    {
-      "key": "stigma:신성 폭발",
-      "name": "신성 폭발",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_036.png"
-    },
-    {
-      "key": "stigma:영혼 동결",
-      "name": "영혼 동결",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_013.png"
-    },
-    {
-      "key": "stigma:원소 강화",
-      "name": "원소 강화",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_040.png"
-    },
-    {
-      "key": "stigma:저주: 나무",
-      "name": "저주: 나무",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_014.png"
-    },
-    {
-      "key": "stigma:지연 폭발",
-      "name": "지연 폭발",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_032.png"
-    }
-  ],
-  "살성": [
-    {
-      "key": "active:그림자 낙하",
-      "name": "그림자 낙하",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_020.png"
-    },
-    {
-      "key": "active:기습",
-      "name": "기습",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_006.png"
-    },
-    {
-      "key": "active:맹수의 포효",
-      "name": "맹수의 포효",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_009.png"
-    },
-    {
-      "key": "active:문양 폭발",
-      "name": "문양 폭발",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_013.png"
-    },
-    {
-      "key": "active:빠른 베기",
-      "name": "빠른 베기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_001.png"
-    },
-    {
-      "key": "active:섬광 베기",
-      "name": "섬광 베기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_005.png"
-    },
-    {
-      "key": "active:심장 찌르기",
-      "name": "심장 찌르기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_035.png"
-    },
-    {
-      "key": "active:암습",
-      "name": "암습",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_007.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:침투",
-      "name": "침투",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_036.png"
-    },
-    {
-      "key": "active:폭풍 난무",
-      "name": "폭풍 난무",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_034.png"
-    },
-    {
-      "key": "active:회오리 베기",
-      "name": "회오리 베기",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_019.png"
-    },
-    {
-      "key": "passive:각오",
-      "name": "각오",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_010.png"
-    },
-    {
-      "key": "passive:강습 자세",
-      "name": "강습 자세",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_006.png"
-    },
-    {
-      "key": "passive:기습 자세",
-      "name": "기습 자세",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:독 바르기",
-      "name": "독 바르기",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_003.png"
-    },
-    {
-      "key": "passive:방어 균열",
-      "name": "방어 균열",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:배후 강타",
-      "name": "배후 강타",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_004.png"
-    },
-    {
-      "key": "passive:빈틈 노리기",
-      "name": "빈틈 노리기",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_002.png"
-    },
-    {
-      "key": "passive:육감 극대화",
-      "name": "육감 극대화",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_001.png"
-    },
-    {
-      "key": "passive:충격 적중",
-      "name": "충격 적중",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_011.png"
-    },
-    {
-      "key": "passive:회생의 계약",
-      "name": "회생의 계약",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
-    },
-    {
-      "key": "stigma:강습 습격",
-      "name": "강습 습격",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:공중 포박",
-      "name": "공중 포박",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_026.png"
-    },
-    {
-      "key": "stigma:그림자 보행",
-      "name": "그림자 보행",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_016.png"
-    },
-    {
-      "key": "stigma:나선 베기",
-      "name": "나선 베기",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_022.png"
-    },
-    {
-      "key": "stigma:맹수의 송곳니",
-      "name": "맹수의 송곳니",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_025.png"
-    },
-    {
-      "key": "stigma:신속의 계약",
-      "name": "신속의 계약",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_037.png"
-    },
-    {
-      "key": "stigma:암검 투척",
-      "name": "암검 투척",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_031.png"
-    },
-    {
-      "key": "stigma:암영보",
-      "name": "암영보",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_014.png"
-    },
-    {
-      "key": "stigma:연막탄",
-      "name": "연막탄",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_023.png"
-    },
-    {
-      "key": "stigma:트리니엘의 비수",
-      "name": "트리니엘의 비수",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_028.png"
-    },
-    {
-      "key": "stigma:환영 분신",
-      "name": "환영 분신",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_029.png"
-    },
-    {
-      "key": "stigma:회피 자세",
-      "name": "회피 자세",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_024.png"
-    },
-    {
-      "key": "stigma:회피의 계약",
-      "name": "회피의 계약",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_039.png"
-    }
-  ],
-  "수호성": [
-    {
-      "key": "active:맹렬한 일격",
-      "name": "맹렬한 일격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_001.png"
-    },
-    {
-      "key": "active:방패 강타",
-      "name": "방패 강타",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_010.png"
-    },
-    {
-      "key": "active:방패 돌격",
-      "name": "방패 돌격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_015.png"
-    },
-    {
-      "key": "active:비호의 일격",
-      "name": "비호의 일격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_035.png"
-    },
-    {
-      "key": "active:섬광 난무",
-      "name": "섬광 난무",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_027.png"
-    },
-    {
-      "key": "active:섬멸",
-      "name": "섬멸",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_028.png"
-    },
-    {
-      "key": "active:쇠약의 맹타",
-      "name": "쇠약의 맹타",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_025.png"
-    },
-    {
-      "key": "active:심판",
-      "name": "심판",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_004.png"
-    },
-    {
-      "key": "active:연속 난타",
-      "name": "연속 난타",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_006.png"
-    },
-    {
-      "key": "active:징벌",
-      "name": "징벌",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_009.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:포획",
-      "name": "포획",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_013.png"
-    },
-    {
-      "key": "passive:격앙",
-      "name": "격앙",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:고통 차단",
-      "name": "고통 차단",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_010.png"
-    },
-    {
-      "key": "passive:단죄의 가호",
-      "name": "단죄의 가호",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_003.png"
-    },
-    {
-      "key": "passive:모욕의 포효",
-      "name": "모욕의 포효",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:비호의 방패",
-      "name": "비호의 방패",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_002.png"
-    },
-    {
-      "key": "passive:생존 의지",
-      "name": "생존 의지",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
-    },
-    {
-      "key": "passive:수호의 인장",
-      "name": "수호의 인장",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_005.png"
-    },
-    {
-      "key": "passive:철벽 방어",
-      "name": "철벽 방어",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_004.png"
-    },
-    {
-      "key": "passive:체력 강화",
-      "name": "체력 강화",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_001.png"
-    },
-    {
-      "key": "passive:충격 적중",
-      "name": "충격 적중",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_006.png"
-    },
-    {
-      "key": "stigma:강습 맹격",
-      "name": "강습 맹격",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:고결의 갑주",
-      "name": "고결의 갑주",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_022.png"
-    },
-    {
-      "key": "stigma:균형의 갑옷",
-      "name": "균형의 갑옷",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_013.png"
-    },
-    {
-      "key": "stigma:나포",
-      "name": "나포",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_021.png"
-    },
-    {
-      "key": "stigma:네자칸의 방패",
-      "name": "네자칸의 방패",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_030.png"
-    },
-    {
-      "key": "stigma:도발",
-      "name": "도발",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_012.png"
-    },
-    {
-      "key": "stigma:보호의 방패",
-      "name": "보호의 방패",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_011.png"
-    },
-    {
-      "key": "stigma:이중 갑옷",
-      "name": "이중 갑옷",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_018.png"
-    },
-    {
-      "key": "stigma:전우 보호",
-      "name": "전우 보호",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_024.png"
-    },
-    {
-      "key": "stigma:전장의 깃발",
-      "name": "전장의 깃발",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_045.png"
-    },
-    {
-      "key": "stigma:주신의 징벌",
-      "name": "주신의 징벌",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_029.png"
-    },
-    {
-      "key": "stigma:처형의 검",
-      "name": "처형의 검",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_041.png"
-    },
-    {
-      "key": "stigma:파멸의 방패",
-      "name": "파멸의 방패",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_007.png"
-    }
-  ],
-  "정령성": [
-    {
-      "key": "active:공간 지배",
-      "name": "공간 지배",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_033.png"
-    },
-    {
-      "key": "active:냉기 충격",
-      "name": "냉기 충격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_001.png"
-    },
-    {
-      "key": "active:소환: 땅의 정령",
-      "name": "소환: 땅의 정령",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_013.png"
-    },
-    {
-      "key": "active:소환: 물의 정령",
-      "name": "소환: 물의 정령",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_011.png"
-    },
-    {
-      "key": "active:소환: 바람의 정령",
-      "name": "소환: 바람의 정령",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_012.png"
-    },
-    {
-      "key": "active:소환: 불의 정령",
-      "name": "소환: 불의 정령",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_010.png"
-    },
-    {
-      "key": "active:연속 난사",
-      "name": "연속 난사",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_034.png"
-    },
-    {
-      "key": "active:영혼의 절규",
-      "name": "영혼의 절규",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_007.png"
-    },
-    {
-      "key": "active:원소 융합",
-      "name": "원소 융합",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_030.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:협공: 저주",
-      "name": "협공: 저주",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_014.png"
-    },
-    {
-      "key": "active:화염 전소",
-      "name": "화염 전소",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_004.png"
-    },
-    {
-      "key": "passive:연속 역류",
-      "name": "연속 역류",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_013.png"
-    },
-    {
-      "key": "passive:원소 결집",
-      "name": "원소 결집",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:정령 강림",
-      "name": "정령 강림",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_003.png"
-    },
-    {
-      "key": "passive:정령 교감",
-      "name": "정령 교감",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:정령 보호",
-      "name": "정령 보호",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_002.png"
-    },
-    {
-      "key": "passive:정령 타격",
-      "name": "정령 타격",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_004.png"
-    },
-    {
-      "key": "passive:정령 회생",
-      "name": "정령 회생",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_011.png"
-    },
-    {
-      "key": "passive:정신 집중",
-      "name": "정신 집중",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_006.png"
-    },
-    {
-      "key": "passive:침식",
-      "name": "침식",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_012.png"
-    },
-    {
-      "key": "passive:회생의 계약",
-      "name": "회생의 계약",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
-    },
-    {
-      "key": "stigma:강습 공포",
-      "name": "강습 공포",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:강화: 정령의 가호",
-      "name": "강화: 정령의 가호",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_019.png"
-    },
-    {
-      "key": "stigma:공포의 절규",
-      "name": "공포의 절규",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_008.png"
-    },
-    {
-      "key": "stigma:마법 강탈",
-      "name": "마법 강탈",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_023.png"
-    },
-    {
-      "key": "stigma:마법 차단",
-      "name": "마법 차단",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_026.png"
-    },
-    {
-      "key": "stigma:명령: 대역",
-      "name": "명령: 대역",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_017.png"
-    },
-    {
-      "key": "stigma:불길의 축복",
-      "name": "불길의 축복",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_037.png"
-    },
-    {
-      "key": "stigma:소환: 고대의 정령",
-      "name": "소환: 고대의 정령",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_025.png"
-    },
-    {
-      "key": "stigma:저주의 구름",
-      "name": "저주의 구름",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_022.png"
-    },
-    {
-      "key": "stigma:카이시넬의 권능",
-      "name": "카이시넬의 권능",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_036.png"
-    },
-    {
-      "key": "stigma:협공: 부식",
-      "name": "협공: 부식",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_015.png"
-    },
-    {
-      "key": "stigma:협공: 파멸의 공세",
-      "name": "협공: 파멸의 공세",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_024.png"
-    },
-    {
-      "key": "stigma:흡인",
-      "name": "흡인",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_006.png"
-    }
-  ],
-  "치유성": [
-    {
-      "key": "active:고통의 연쇄",
-      "name": "고통의 연쇄",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_007.png"
-    },
-    {
-      "key": "active:단죄",
-      "name": "단죄",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_035.png"
-    },
-    {
-      "key": "active:대지의 응보",
-      "name": "대지의 응보",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_001.png"
-    },
-    {
-      "key": "active:벼락 난사",
-      "name": "벼락 난사",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_037.png"
-    },
-    {
-      "key": "active:벽력",
-      "name": "벽력",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_006.png"
-    },
-    {
-      "key": "active:신성한 기운",
-      "name": "신성한 기운",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_015.png"
-    },
-    {
-      "key": "active:심판의 번개",
-      "name": "심판의 번개",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_004.png"
-    },
-    {
-      "key": "active:약화의 낙인",
-      "name": "약화의 낙인",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_008.png"
-    },
-    {
-      "key": "active:재생의 빛",
-      "name": "재생의 빛",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_009.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:치유의 빛",
-      "name": "치유의 빛",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_010.png"
-    },
-    {
-      "key": "active:쾌유의 광휘",
-      "name": "쾌유의 광휘",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_012.png"
-    },
-    {
-      "key": "passive:대지의 은총",
-      "name": "대지의 은총",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:따뜻한 가호",
-      "name": "따뜻한 가호",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_001.png"
-    },
-    {
-      "key": "passive:불사의 장막",
-      "name": "불사의 장막",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_011.png"
-    },
-    {
-      "key": "passive:생존 의지",
-      "name": "생존 의지",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
-    },
-    {
-      "key": "passive:주신의 가호",
-      "name": "주신의 가호",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_002.png"
-    },
-    {
-      "key": "passive:주신의 은총",
-      "name": "주신의 은총",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_012.png"
-    },
-    {
-      "key": "passive:집중의 기도",
-      "name": "집중의 기도",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_006.png"
-    },
-    {
-      "key": "passive:찬란한 가호",
-      "name": "찬란한 가호",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:치유력 강화",
-      "name": "치유력 강화",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_003.png"
-    },
-    {
-      "key": "passive:회복 차단",
-      "name": "회복 차단",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_005.png"
-    },
-    {
-      "key": "stigma:강습 낙인",
-      "name": "강습 낙인",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
-    },
-    {
-      "key": "stigma:구원",
-      "name": "구원",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_026.png"
-    },
-    {
-      "key": "stigma:권능 폭발",
-      "name": "권능 폭발",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_027.png"
-    },
-    {
-      "key": "stigma:대지의 징벌",
-      "name": "대지의 징벌",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_040.png"
-    },
-    {
-      "key": "stigma:면죄",
-      "name": "면죄",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_028.png"
-    },
-    {
-      "key": "stigma:보호의 빛",
-      "name": "보호의 빛",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_041.png"
-    },
-    {
-      "key": "stigma:소환 부활",
-      "name": "소환 부활",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_039.png"
-    },
-    {
-      "key": "stigma:속박",
-      "name": "속박",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_019.png"
-    },
-    {
-      "key": "stigma:유스티엘의 권능",
-      "name": "유스티엘의 권능",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_042.png"
-    },
-    {
-      "key": "stigma:증폭의 기도",
-      "name": "증폭의 기도",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_044.png"
-    },
-    {
-      "key": "stigma:치유의 기운",
-      "name": "치유의 기운",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_016.png"
-    },
-    {
-      "key": "stigma:파멸의 목소리",
-      "name": "파멸의 목소리",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_029.png"
-    },
-    {
-      "key": "stigma:환생의 손길",
-      "name": "환생의 손길",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_011.png"
-    }
-  ],
-  "호법성": [
-    {
-      "key": "active:격파쇄",
-      "name": "격파쇄",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_001.png"
-    },
-    {
-      "key": "active:돌진 격파",
-      "name": "돌진 격파",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_009.png"
-    },
-    {
-      "key": "active:백열격",
-      "name": "백열격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_004.png"
-    },
-    {
-      "key": "active:암격쇄",
-      "name": "암격쇄",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_010.png"
-    },
-    {
-      "key": "active:열파격",
-      "name": "열파격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_015.png"
-    },
-    {
-      "key": "active:진동쇄",
-      "name": "진동쇄",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_021.png"
-    },
-    {
-      "key": "active:질풍 난무",
-      "name": "질풍 난무",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_030.png"
-    },
-    {
-      "key": "active:충격 해제",
-      "name": "충격 해제",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
-    },
-    {
-      "key": "active:쾌유의 주문",
-      "name": "쾌유의 주문",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_013.png"
-    },
-    {
-      "key": "active:타격쇄",
-      "name": "타격쇄",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_006.png"
-    },
-    {
-      "key": "active:파동격",
-      "name": "파동격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_008.png"
-    },
-    {
-      "key": "active:회전격",
-      "name": "회전격",
-      "skillType": "active",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_029.png"
-    },
-    {
-      "key": "passive:격노의 주문",
-      "name": "격노의 주문",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_007.png"
-    },
-    {
-      "key": "passive:고취의 주문",
-      "name": "고취의 주문",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_011.png"
-    },
-    {
+      "id": 11750000,
       "key": "passive:공격 준비",
       "name": "공격 준비",
       "skillType": "passive",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_005.png"
     },
     {
-      "key": "passive:대지의 약속",
-      "name": "대지의 약속",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_010.png"
-    },
-    {
-      "key": "passive:바람의 약속",
-      "name": "바람의 약속",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_008.png"
-    },
-    {
-      "key": "passive:보호진",
-      "name": "보호진",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_001.png"
-    },
-    {
-      "key": "passive:생명의 축복",
-      "name": "생명의 축복",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_012.png"
-    },
-    {
-      "key": "passive:생존 의지",
-      "name": "생존 의지",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
-    },
-    {
-      "key": "passive:십자 방어",
-      "name": "십자 방어",
-      "skillType": "passive",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_002.png"
-    },
-    {
+      "id": 11760000,
       "key": "passive:충격 적중",
       "name": "충격 적중",
       "skillType": "passive",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_006.png"
     },
     {
-      "key": "stigma:강습 충격",
-      "name": "강습 충격",
+      "id": 11770000,
+      "key": "passive:파괴 충동",
+      "name": "파괴 충동",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_007.png"
+    },
+    {
+      "id": 11780000,
+      "key": "passive:노련한 반격",
+      "name": "노련한 반격",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_008.png"
+    },
+    {
+      "id": 11790000,
+      "key": "passive:생존 의지",
+      "name": "생존 의지",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
+    },
+    {
+      "id": 11800000,
+      "key": "passive:살기 파열",
+      "name": "살기 파열",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_010.png"
+    },
+    {
+      "id": 11240000,
+      "key": "stigma:분노의 파동",
+      "name": "분노의 파동",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_007.png"
+    },
+    {
+      "id": 11400000,
+      "key": "stigma:돌격 자세",
+      "name": "돌격 자세",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_040.png"
+    },
+    {
+      "id": 11250000,
+      "key": "stigma:지켈의 축복",
+      "name": "지켈의 축복",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_024.png"
+    },
+    {
+      "id": 11110000,
+      "key": "stigma:집중 막기",
+      "name": "집중 막기",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_011.png"
+    },
+    {
+      "id": 11130000,
+      "key": "stigma:균형의 갑옷",
+      "name": "균형의 갑옷",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_013.png"
+    },
+    {
+      "id": 11080000,
+      "key": "stigma:칼날 날리기",
+      "name": "칼날 날리기",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_008.png"
+    },
+    {
+      "id": 11380000,
+      "key": "stigma:근성",
+      "name": "근성",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_038.png"
+    },
+    {
+      "id": 11340000,
+      "key": "stigma:흡혈의 검",
+      "name": "흡혈의 검",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_034.png"
+    },
+    {
+      "id": 11390000,
+      "key": "stigma:격노 폭발",
+      "name": "격노 폭발",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_039.png"
+    },
+    {
+      "id": 11410000,
+      "key": "stigma:파동의 갑주",
+      "name": "파동의 갑주",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_041.png"
+    },
+    {
+      "id": 11430000,
+      "key": "stigma:강제 결박",
+      "name": "강제 결박",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_043.png"
+    },
+    {
+      "id": 11700000,
+      "key": "stigma:강습 일격",
+      "name": "강습 일격",
       "skillType": "stigma",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
     },
     {
-      "key": "stigma:결계의 주문",
-      "name": "결계의 주문",
+      "id": 11450000,
+      "key": "stigma:분쇄 돌진",
+      "name": "분쇄 돌진",
       "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_044.png"
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_045.png"
+    }
+  ],
+  "궁성": [
+    {
+      "id": 14020000,
+      "key": "active:저격",
+      "name": "저격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_001.png"
     },
     {
-      "key": "stigma:결박의 낙인",
-      "name": "결박의 낙인",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_023.png"
+      "id": 14340000,
+      "key": "active:속사",
+      "name": "속사",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_034.png"
     },
     {
-      "key": "stigma:마르쿠탄의 분노",
-      "name": "마르쿠탄의 분노",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_033.png"
+      "id": 14130000,
+      "key": "active:올가미 화살",
+      "name": "올가미 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_013.png"
     },
     {
+      "id": 14090000,
+      "key": "active:표적 화살",
+      "name": "표적 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_031.png"
+    },
+    {
+      "id": 14050000,
+      "key": "active:송곳 화살",
+      "name": "송곳 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_005.png"
+    },
+    {
+      "id": 14330000,
+      "key": "active:화살 난사",
+      "name": "화살 난사",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_033.png"
+    },
+    {
+      "id": 14110000,
+      "key": "active:광풍 화살",
+      "name": "광풍 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_011.png"
+    },
+    {
+      "id": 14170000,
+      "key": "active:폭발의 덫",
+      "name": "폭발의 덫",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_017.png"
+    },
+    {
+      "id": 14080000,
+      "key": "active:파열 화살",
+      "name": "파열 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_008.png"
+    },
+    {
+      "id": 14070000,
+      "key": "active:제압 화살",
+      "name": "제압 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_007.png"
+    },
+    {
+      "id": 14010000,
+      "key": "active:조준 화살",
+      "name": "조준 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_002.png"
+    },
+    {
+      "id": 14260000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 14710000,
+      "key": "passive:경계의 눈",
+      "name": "경계의 눈",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_004.png"
+    },
+    {
+      "id": 14720000,
+      "key": "passive:집중 포화",
+      "name": "집중 포화",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_003.png"
+    },
+    {
+      "id": 14730000,
+      "key": "passive:바람의 활력",
+      "name": "바람의 활력",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_006.png"
+    },
+    {
+      "id": 14740000,
+      "key": "passive:집중의 눈",
+      "name": "집중의 눈",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_001.png"
+    },
+    {
+      "id": 14750000,
+      "key": "passive:사냥꾼의 결의",
+      "name": "사냥꾼의 결의",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_011.png"
+    },
+    {
+      "id": 14760000,
+      "key": "passive:저항의 결의",
+      "name": "저항의 결의",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_012.png"
+    },
+    {
+      "id": 14770000,
+      "key": "passive:속박의 눈",
+      "name": "속박의 눈",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_008.png"
+    },
+    {
+      "id": 14780000,
+      "key": "passive:근접 사격",
+      "name": "근접 사격",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_013.png"
+    },
+    {
+      "id": 14790000,
+      "key": "passive:회생의 계약",
+      "name": "회생의 계약",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
+    },
+    {
+      "id": 14800000,
+      "key": "passive:사냥꾼의 혼",
+      "name": "사냥꾼의 혼",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_Passive_007.png"
+    },
+    {
+      "id": 14270000,
+      "key": "stigma:화살 폭풍",
+      "name": "화살 폭풍",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_026.png"
+    },
+    {
+      "id": 14310000,
+      "key": "stigma:바이젤의 권능",
+      "name": "바이젤의 권능",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_022.png"
+    },
+    {
+      "id": 14220000,
+      "key": "stigma:축복의 활",
+      "name": "축복의 활",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_030.png"
+    },
+    {
+      "id": 14120000,
+      "key": "stigma:기습 차기",
+      "name": "기습 차기",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_012.png"
+    },
+    {
+      "id": 14180000,
+      "key": "stigma:결박의 덫",
+      "name": "결박의 덫",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_018.png"
+    },
+    {
+      "id": 14150000,
+      "key": "stigma:환영 화살",
+      "name": "환영 화살",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_015.png"
+    },
+    {
+      "id": 14190000,
+      "key": "stigma:은신",
+      "name": "은신",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_019.png"
+    },
+    {
+      "id": 14160000,
+      "key": "stigma:봉인 화살",
+      "name": "봉인 화살",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_016.png"
+    },
+    {
+      "id": 14350000,
+      "key": "stigma:대자연의 숨결",
+      "name": "대자연의 숨결",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_035.png"
+    },
+    {
+      "id": 14060000,
+      "key": "stigma:그리폰 화살",
+      "name": "그리폰 화살",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_006.png"
+    },
+    {
+      "id": 14360000,
+      "key": "stigma:폭발 화살",
+      "name": "폭발 화살",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_023.png"
+    },
+    {
+      "id": 14700000,
+      "key": "stigma:강습 강타",
+      "name": "강습 강타",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 14380000,
+      "key": "stigma:지원 사격",
+      "name": "지원 사격",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_RA_SKILL_038.png"
+    }
+  ],
+  "마도성": [
+    {
+      "id": 15210000,
+      "key": "active:불꽃 화살",
+      "name": "불꽃 화살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_020.png"
+    },
+    {
+      "id": 15090000,
+      "key": "active:얼음 사슬",
+      "name": "얼음 사슬",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_009.png"
+    },
+    {
+      "id": 15040000,
+      "key": "active:불꽃 작살",
+      "name": "불꽃 작살",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_004.png"
+    },
+    {
+      "id": 15280000,
+      "key": "active:혹한의 바람",
+      "name": "혹한의 바람",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_025.png"
+    },
+    {
+      "id": 15050000,
+      "key": "active:불꽃 폭발",
+      "name": "불꽃 폭발",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_005.png"
+    },
+    {
+      "id": 15010000,
+      "key": "active:화염 난사",
+      "name": "화염 난사",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_001.png"
+    },
+    {
+      "id": 15150000,
+      "key": "active:빙결",
+      "name": "빙결",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_015.png"
+    },
+    {
+      "id": 15110000,
+      "key": "active:겨울의 속박",
+      "name": "겨울의 속박",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_011.png"
+    },
+    {
+      "id": 15220000,
+      "key": "active:빙결 폭발",
+      "name": "빙결 폭발",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_022.png"
+    },
+    {
+      "id": 15310000,
+      "key": "active:집중의 기원",
+      "name": "집중의 기원",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_028.png"
+    },
+    {
+      "id": 15060000,
+      "key": "active:지옥의 화염",
+      "name": "지옥의 화염",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_006.png"
+    },
+    {
+      "id": 15240000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 15710000,
+      "key": "passive:불의 표식",
+      "name": "불의 표식",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_002.png"
+    },
+    {
+      "id": 15720000,
+      "key": "passive:대지의 로브",
+      "name": "대지의 로브",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_006.png"
+    },
+    {
+      "id": 15730000,
+      "key": "passive:냉기 소환",
+      "name": "냉기 소환",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_003.png"
+    },
+    {
+      "id": 15740000,
+      "key": "passive:불꽃의 로브",
+      "name": "불꽃의 로브",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_004.png"
+    },
+    {
+      "id": 15760000,
+      "key": "passive:정기 흡수",
+      "name": "정기 흡수",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_001.png"
+    },
+    {
+      "id": 15770000,
+      "key": "passive:저항의 은혜",
+      "name": "저항의 은혜",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_038.png"
+    },
+    {
+      "id": 15750000,
+      "key": "passive:냉기의 로브",
+      "name": "냉기의 로브",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_005.png"
+    },
+    {
+      "id": 15780000,
+      "key": "passive:강화의 은혜",
+      "name": "강화의 은혜",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_007.png"
+    },
+    {
+      "id": 15790000,
+      "key": "passive:회생의 계약",
+      "name": "회생의 계약",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
+    },
+    {
+      "id": 15800000,
+      "key": "passive:생기 증발",
+      "name": "생기 증발",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_Passive_008.png"
+    },
+    {
+      "id": 15360000,
+      "key": "stigma:신성 폭발",
+      "name": "신성 폭발",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_036.png"
+    },
+    {
+      "id": 15160000,
+      "key": "stigma:강철 보호막",
+      "name": "강철 보호막",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_016.png"
+    },
+    {
+      "id": 15400000,
+      "key": "stigma:원소 강화",
+      "name": "원소 강화",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_040.png"
+    },
+    {
+      "id": 15140000,
+      "key": "stigma:저주: 나무",
+      "name": "저주: 나무",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_014.png"
+    },
+    {
+      "id": 15230000,
+      "key": "stigma:빙설의 갑주",
+      "name": "빙설의 갑주",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_021.png"
+    },
+    {
+      "id": 15130000,
+      "key": "stigma:영혼 동결",
+      "name": "영혼 동결",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_013.png"
+    },
+    {
+      "id": 15200000,
+      "key": "stigma:냉기 폭풍",
+      "name": "냉기 폭풍",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_019.png"
+    },
+    {
+      "id": 15390000,
+      "key": "stigma:불의 장벽",
+      "name": "불의 장벽",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_039.png"
+    },
+    {
+      "id": 15300000,
+      "key": "stigma:루미엘의 공간",
+      "name": "루미엘의 공간",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_027.png"
+    },
+    {
+      "id": 15320000,
+      "key": "stigma:지연 폭발",
+      "name": "지연 폭발",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_032.png"
+    },
+    {
+      "id": 15120000,
+      "key": "stigma:빙하 강타",
+      "name": "빙하 강타",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_012.png"
+    },
+    {
+      "id": 15700000,
+      "key": "stigma:강습 폭격",
+      "name": "강습 폭격",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 15410000,
+      "key": "stigma:동면",
+      "name": "동면",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_SO_SKILL_041.png"
+    }
+  ],
+  "살성": [
+    {
+      "id": 13010000,
+      "key": "active:빠른 베기",
+      "name": "빠른 베기",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_001.png"
+    },
+    {
+      "id": 13100000,
+      "key": "active:맹수의 포효",
+      "name": "맹수의 포효",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_009.png"
+    },
+    {
+      "id": 13070000,
+      "key": "active:암습",
+      "name": "암습",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_007.png"
+    },
+    {
+      "id": 13060000,
+      "key": "active:기습",
+      "name": "기습",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_006.png"
+    },
+    {
+      "id": 13350000,
+      "key": "active:심장 찌르기",
+      "name": "심장 찌르기",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_035.png"
+    },
+    {
+      "id": 13340000,
+      "key": "active:폭풍 난무",
+      "name": "폭풍 난무",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_034.png"
+    },
+    {
+      "id": 13210000,
+      "key": "active:회오리 베기",
+      "name": "회오리 베기",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_019.png"
+    },
+    {
+      "id": 13050000,
+      "key": "active:섬광 베기",
+      "name": "섬광 베기",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_005.png"
+    },
+    {
+      "id": 13360000,
+      "key": "active:침투",
+      "name": "침투",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_036.png"
+    },
+    {
+      "id": 13220000,
+      "key": "active:그림자 낙하",
+      "name": "그림자 낙하",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_020.png"
+    },
+    {
+      "id": 13130000,
+      "key": "active:문양 폭발",
+      "name": "문양 폭발",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_013.png"
+    },
+    {
+      "id": 13260000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 13710000,
+      "key": "passive:육감 극대화",
+      "name": "육감 극대화",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_001.png"
+    },
+    {
+      "id": 13720000,
+      "key": "passive:빈틈 노리기",
+      "name": "빈틈 노리기",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_002.png"
+    },
+    {
+      "id": 13730000,
+      "key": "passive:독 바르기",
+      "name": "독 바르기",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_003.png"
+    },
+    {
+      "id": 13740000,
+      "key": "passive:배후 강타",
+      "name": "배후 강타",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_004.png"
+    },
+    {
+      "id": 13750000,
+      "key": "passive:강습 자세",
+      "name": "강습 자세",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_006.png"
+    },
+    {
+      "id": 13760000,
+      "key": "passive:충격 적중",
+      "name": "충격 적중",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_011.png"
+    },
+    {
+      "id": 13770000,
+      "key": "passive:기습 자세",
+      "name": "기습 자세",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_007.png"
+    },
+    {
+      "id": 13780000,
+      "key": "passive:방어 균열",
+      "name": "방어 균열",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_008.png"
+    },
+    {
+      "id": 13790000,
+      "key": "passive:회생의 계약",
+      "name": "회생의 계약",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
+    },
+    {
+      "id": 13800000,
+      "key": "passive:각오",
+      "name": "각오",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_010.png"
+    },
+    {
+      "id": 13270000,
+      "key": "stigma:맹수의 송곳니",
+      "name": "맹수의 송곳니",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_025.png"
+    },
+    {
+      "id": 13390000,
+      "key": "stigma:신속의 계약",
+      "name": "신속의 계약",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_037.png"
+    },
+    {
+      "id": 13250000,
+      "key": "stigma:연막탄",
+      "name": "연막탄",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_023.png"
+    },
+    {
+      "id": 13080000,
+      "key": "stigma:회피 자세",
+      "name": "회피 자세",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_024.png"
+    },
+    {
+      "id": 13280000,
+      "key": "stigma:나선 베기",
+      "name": "나선 베기",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_022.png"
+    },
+    {
+      "id": 13180000,
+      "key": "stigma:그림자 보행",
+      "name": "그림자 보행",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_016.png"
+    },
+    {
+      "id": 13020000,
+      "key": "stigma:암검 투척",
+      "name": "암검 투척",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_031.png"
+    },
+    {
+      "id": 13300000,
+      "key": "stigma:트리니엘의 비수",
+      "name": "트리니엘의 비수",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_028.png"
+    },
+    {
+      "id": 13230000,
+      "key": "stigma:공중 포박",
+      "name": "공중 포박",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_026.png"
+    },
+    {
+      "id": 13310000,
+      "key": "stigma:환영 분신",
+      "name": "환영 분신",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_029.png"
+    },
+    {
+      "id": 13370000,
+      "key": "stigma:회피의 계약",
+      "name": "회피의 계약",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_039.png"
+    },
+    {
+      "id": 13700000,
+      "key": "stigma:강습 습격",
+      "name": "강습 습격",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 13140000,
+      "key": "stigma:암영보",
+      "name": "암영보",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_014.png"
+    }
+  ],
+  "수호성": [
+    {
+      "id": 12010000,
+      "key": "active:맹렬한 일격",
+      "name": "맹렬한 일격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_001.png"
+    },
+    {
+      "id": 12040000,
+      "key": "active:연속 난타",
+      "name": "연속 난타",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_006.png"
+    },
+    {
+      "id": 12130000,
+      "key": "active:포획",
+      "name": "포획",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_013.png"
+    },
+    {
+      "id": 12100000,
+      "key": "active:방패 강타",
+      "name": "방패 강타",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_010.png"
+    },
+    {
+      "id": 12240000,
+      "key": "active:심판",
+      "name": "심판",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_004.png"
+    },
+    {
+      "id": 12340000,
+      "key": "active:섬광 난무",
+      "name": "섬광 난무",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_027.png"
+    },
+    {
+      "id": 12270000,
+      "key": "active:쇠약의 맹타",
+      "name": "쇠약의 맹타",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_025.png"
+    },
+    {
+      "id": 12350000,
+      "key": "active:비호의 일격",
+      "name": "비호의 일격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_035.png"
+    },
+    {
+      "id": 12430000,
+      "key": "active:방패 돌격",
+      "name": "방패 돌격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_015.png"
+    },
+    {
+      "id": 12300000,
+      "key": "active:섬멸",
+      "name": "섬멸",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_028.png"
+    },
+    {
+      "id": 12090000,
+      "key": "active:징벌",
+      "name": "징벌",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_009.png"
+    },
+    {
+      "id": 12260000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 12710000,
+      "key": "passive:체력 강화",
+      "name": "체력 강화",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_001.png"
+    },
+    {
+      "id": 12720000,
+      "key": "passive:비호의 방패",
+      "name": "비호의 방패",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_002.png"
+    },
+    {
+      "id": 12730000,
+      "key": "passive:단죄의 가호",
+      "name": "단죄의 가호",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_003.png"
+    },
+    {
+      "id": 12740000,
+      "key": "passive:철벽 방어",
+      "name": "철벽 방어",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_004.png"
+    },
+    {
+      "id": 12750000,
+      "key": "passive:수호의 인장",
+      "name": "수호의 인장",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_005.png"
+    },
+    {
+      "id": 12760000,
+      "key": "passive:충격 적중",
+      "name": "충격 적중",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_006.png"
+    },
+    {
+      "id": 12770000,
+      "key": "passive:모욕의 포효",
+      "name": "모욕의 포효",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_007.png"
+    },
+    {
+      "id": 12780000,
+      "key": "passive:격앙",
+      "name": "격앙",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_008.png"
+    },
+    {
+      "id": 12790000,
+      "key": "passive:생존 의지",
+      "name": "생존 의지",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
+    },
+    {
+      "id": 12800000,
+      "key": "passive:고통 차단",
+      "name": "고통 차단",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_Passive_010.png"
+    },
+    {
+      "id": 12310000,
+      "key": "stigma:주신의 징벌",
+      "name": "주신의 징벌",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_029.png"
+    },
+    {
+      "id": 12320000,
+      "key": "stigma:네자칸의 방패",
+      "name": "네자칸의 방패",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_030.png"
+    },
+    {
+      "id": 12110000,
+      "key": "stigma:보호의 방패",
+      "name": "보호의 방패",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_011.png"
+    },
+    {
+      "id": 12120000,
+      "key": "stigma:도발",
+      "name": "도발",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_012.png"
+    },
+    {
+      "id": 12200000,
+      "key": "stigma:균형의 갑옷",
+      "name": "균형의 갑옷",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_013.png"
+    },
+    {
+      "id": 12190000,
+      "key": "stigma:이중 갑옷",
+      "name": "이중 갑옷",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_018.png"
+    },
+    {
+      "id": 12070000,
+      "key": "stigma:파멸의 방패",
+      "name": "파멸의 방패",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_007.png"
+    },
+    {
+      "id": 12230000,
+      "key": "stigma:고결의 갑주",
+      "name": "고결의 갑주",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_022.png"
+    },
+    {
+      "id": 12410000,
+      "key": "stigma:처형의 검",
+      "name": "처형의 검",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_041.png"
+    },
+    {
+      "id": 12250000,
+      "key": "stigma:전우 보호",
+      "name": "전우 보호",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_024.png"
+    },
+    {
+      "id": 12220000,
+      "key": "stigma:나포",
+      "name": "나포",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_021.png"
+    },
+    {
+      "id": 12700000,
+      "key": "stigma:강습 맹격",
+      "name": "강습 맹격",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 12450000,
+      "key": "stigma:전장의 깃발",
+      "name": "전장의 깃발",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_TE_SKILL_045.png"
+    }
+  ],
+  "정령성": [
+    {
+      "id": 16010000,
+      "key": "active:냉기 충격",
+      "name": "냉기 충격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_001.png"
+    },
+    {
+      "id": 16040000,
+      "key": "active:화염 전소",
+      "name": "화염 전소",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_004.png"
+    },
+    {
+      "id": 16100000,
+      "key": "active:소환: 불의 정령",
+      "name": "소환: 불의 정령",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_010.png"
+    },
+    {
+      "id": 16110000,
+      "key": "active:소환: 물의 정령",
+      "name": "소환: 물의 정령",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_011.png"
+    },
+    {
+      "id": 16140000,
+      "key": "active:협공: 저주",
+      "name": "협공: 저주",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_014.png"
+    },
+    {
+      "id": 16340000,
+      "key": "active:연속 난사",
+      "name": "연속 난사",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_034.png"
+    },
+    {
+      "id": 16130000,
+      "key": "active:소환: 땅의 정령",
+      "name": "소환: 땅의 정령",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_013.png"
+    },
+    {
+      "id": 16330000,
+      "key": "active:공간 지배",
+      "name": "공간 지배",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_033.png"
+    },
+    {
+      "id": 16120000,
+      "key": "active:소환: 바람의 정령",
+      "name": "소환: 바람의 정령",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_012.png"
+    },
+    {
+      "id": 16070000,
+      "key": "active:영혼의 절규",
+      "name": "영혼의 절규",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_007.png"
+    },
+    {
+      "id": 16300000,
+      "key": "active:원소 융합",
+      "name": "원소 융합",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_030.png"
+    },
+    {
+      "id": 16200000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 16710000,
+      "key": "passive:정령 타격",
+      "name": "정령 타격",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_004.png"
+    },
+    {
+      "id": 16720000,
+      "key": "passive:정령 보호",
+      "name": "정령 보호",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_002.png"
+    },
+    {
+      "id": 16730000,
+      "key": "passive:정령 강림",
+      "name": "정령 강림",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_003.png"
+    },
+    {
+      "id": 16740000,
+      "key": "passive:침식",
+      "name": "침식",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_012.png"
+    },
+    {
+      "id": 16750000,
+      "key": "passive:정령 회생",
+      "name": "정령 회생",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_011.png"
+    },
+    {
+      "id": 16760000,
+      "key": "passive:정신 집중",
+      "name": "정신 집중",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_006.png"
+    },
+    {
+      "id": 16800000,
+      "key": "passive:연속 역류",
+      "name": "연속 역류",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_013.png"
+    },
+    {
+      "id": 16770000,
+      "key": "passive:정령 교감",
+      "name": "정령 교감",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_007.png"
+    },
+    {
+      "id": 16790000,
+      "key": "passive:회생의 계약",
+      "name": "회생의 계약",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_AS_SKILL_Passive_009.png"
+    },
+    {
+      "id": 16780000,
+      "key": "passive:원소 결집",
+      "name": "원소 결집",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_Passive_008.png"
+    },
+    {
+      "id": 16240000,
+      "key": "stigma:협공: 파멸의 공세",
+      "name": "협공: 파멸의 공세",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_024.png"
+    },
+    {
+      "id": 16190000,
+      "key": "stigma:강화: 정령의 가호",
+      "name": "강화: 정령의 가호",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_019.png"
+    },
+    {
+      "id": 16370000,
+      "key": "stigma:불길의 축복",
+      "name": "불길의 축복",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_037.png"
+    },
+    {
+      "id": 16250000,
+      "key": "stigma:소환: 고대의 정령",
+      "name": "소환: 고대의 정령",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_025.png"
+    },
+    {
+      "id": 16150000,
+      "key": "stigma:협공: 부식",
+      "name": "협공: 부식",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_015.png"
+    },
+    {
+      "id": 16360000,
+      "key": "stigma:카이시넬의 권능",
+      "name": "카이시넬의 권능",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_036.png"
+    },
+    {
+      "id": 16060000,
+      "key": "stigma:흡인",
+      "name": "흡인",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_006.png"
+    },
+    {
+      "id": 16080000,
+      "key": "stigma:공포의 절규",
+      "name": "공포의 절규",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_008.png"
+    },
+    {
+      "id": 16220000,
+      "key": "stigma:저주의 구름",
+      "name": "저주의 구름",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_022.png"
+    },
+    {
+      "id": 16230000,
+      "key": "stigma:마법 강탈",
+      "name": "마법 강탈",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_023.png"
+    },
+    {
+      "id": 16260000,
+      "key": "stigma:마법 차단",
+      "name": "마법 차단",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_026.png"
+    },
+    {
+      "id": 16700000,
+      "key": "stigma:강습 공포",
+      "name": "강습 공포",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 16170000,
+      "key": "stigma:명령: 대역",
+      "name": "명령: 대역",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_EL_SKILL_017.png"
+    }
+  ],
+  "치유성": [
+    {
+      "id": 17010000,
+      "key": "active:대지의 응보",
+      "name": "대지의 응보",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_001.png"
+    },
+    {
+      "id": 17020000,
+      "key": "active:뇌전",
+      "name": "뇌전",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_002.png"
+    },
+    {
+      "id": 17030000,
+      "key": "active:방전",
+      "name": "방전",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_003.png"
+    },
+    {
+      "id": 17040000,
+      "key": "active:심판의 번개",
+      "name": "심판의 번개",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_004.png"
+    },
+    {
+      "id": 17050000,
+      "key": "active:천벌",
+      "name": "천벌",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_005.png"
+    },
+    {
+      "id": 17080000,
+      "key": "active:약화의 낙인",
+      "name": "약화의 낙인",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_008.png"
+    },
+    {
+      "id": 17150000,
+      "key": "active:신성한 기운",
+      "name": "신성한 기운",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_015.png"
+    },
+    {
+      "id": 17070000,
+      "key": "active:고통의 연쇄",
+      "name": "고통의 연쇄",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_007.png"
+    },
+    {
+      "id": 17370000,
+      "key": "active:벼락 난사",
+      "name": "벼락 난사",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_037.png"
+    },
+    {
+      "id": 17090000,
+      "key": "active:재생의 빛",
+      "name": "재생의 빛",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_009.png"
+    },
+    {
+      "id": 17350000,
+      "key": "active:단죄",
+      "name": "단죄",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_035.png"
+    },
+    {
+      "id": 17100000,
+      "key": "active:치유의 빛",
+      "name": "치유의 빛",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_010.png"
+    },
+    {
+      "id": 17120000,
+      "key": "active:쾌유의 광휘",
+      "name": "쾌유의 광휘",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_012.png"
+    },
+    {
+      "id": 17060000,
+      "key": "active:벽력",
+      "name": "벽력",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_006.png"
+    },
+    {
+      "id": 17240000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 17710000,
+      "key": "passive:따뜻한 가호",
+      "name": "따뜻한 가호",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_001.png"
+    },
+    {
+      "id": 17720000,
+      "key": "passive:주신의 가호",
+      "name": "주신의 가호",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_002.png"
+    },
+    {
+      "id": 17730000,
+      "key": "passive:주신의 은총",
+      "name": "주신의 은총",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_012.png"
+    },
+    {
+      "id": 17740000,
+      "key": "passive:치유력 강화",
+      "name": "치유력 강화",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_003.png"
+    },
+    {
+      "id": 17750000,
+      "key": "passive:불사의 장막",
+      "name": "불사의 장막",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_011.png"
+    },
+    {
+      "id": 17760000,
+      "key": "passive:회복 차단",
+      "name": "회복 차단",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_005.png"
+    },
+    {
+      "id": 17770000,
+      "key": "passive:집중의 기도",
+      "name": "집중의 기도",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_006.png"
+    },
+    {
+      "id": 17780000,
+      "key": "passive:대지의 은총",
+      "name": "대지의 은총",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_008.png"
+    },
+    {
+      "id": 17790000,
+      "key": "passive:생존 의지",
+      "name": "생존 의지",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
+    },
+    {
+      "id": 17800000,
+      "key": "passive:찬란한 가호",
+      "name": "찬란한 가호",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_Passive_007.png"
+    },
+    {
+      "id": 17280000,
+      "key": "stigma:권능 폭발",
+      "name": "권능 폭발",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_027.png"
+    },
+    {
+      "id": 17290000,
+      "key": "stigma:면죄",
+      "name": "면죄",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_028.png"
+    },
+    {
+      "id": 17160000,
+      "key": "stigma:생명의 권능",
+      "name": "생명의 권능",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_047.png"
+    },
+    {
+      "id": 17430000,
+      "key": "stigma:증폭의 기도",
+      "name": "증폭의 기도",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_044.png"
+    },
+    {
+      "id": 17390000,
+      "key": "stigma:소환 부활",
+      "name": "소환 부활",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_039.png"
+    },
+    {
+      "id": 17400000,
+      "key": "stigma:대지의 징벌",
+      "name": "대지의 징벌",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_040.png"
+    },
+    {
+      "id": 17270000,
+      "key": "stigma:구원",
+      "name": "구원",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_026.png"
+    },
+    {
+      "id": 17190000,
+      "key": "stigma:속박",
+      "name": "속박",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_019.png"
+    },
+    {
+      "id": 17410000,
+      "key": "stigma:보호의 빛",
+      "name": "보호의 빛",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_041.png"
+    },
+    {
+      "id": 17420000,
+      "key": "stigma:유스티엘의 권능",
+      "name": "유스티엘의 권능",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_042.png"
+    },
+    {
+      "id": 17300000,
+      "key": "stigma:파멸의 목소리",
+      "name": "파멸의 목소리",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_029.png"
+    },
+    {
+      "id": 17700000,
+      "key": "stigma:강습 낙인",
+      "name": "강습 낙인",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 17440000,
+      "key": "stigma:고결한 기운",
+      "name": "고결한 기운",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CL_SKILL_046.png"
+    }
+  ],
+  "호법성": [
+    {
+      "id": 18010000,
+      "key": "active:격파쇄",
+      "name": "격파쇄",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_001.png"
+    },
+    {
+      "id": 18040000,
+      "key": "active:백열격",
+      "name": "백열격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_004.png"
+    },
+    {
+      "id": 18090000,
+      "key": "active:돌진 격파",
+      "name": "돌진 격파",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_009.png"
+    },
+    {
+      "id": 18060000,
+      "key": "active:타격쇄",
+      "name": "타격쇄",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_006.png"
+    },
+    {
+      "id": 18100000,
+      "key": "active:암격쇄",
+      "name": "암격쇄",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_010.png"
+    },
+    {
+      "id": 18300000,
+      "key": "active:질풍 난무",
+      "name": "질풍 난무",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_030.png"
+    },
+    {
+      "id": 18150000,
+      "key": "active:열파격",
+      "name": "열파격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_015.png"
+    },
+    {
+      "id": 18120000,
+      "key": "active:쾌유의 주문",
+      "name": "쾌유의 주문",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_013.png"
+    },
+    {
+      "id": 18210000,
+      "key": "active:진동쇄",
+      "name": "진동쇄",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_021.png"
+    },
+    {
+      "id": 18080000,
+      "key": "active:파동격",
+      "name": "파동격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_008.png"
+    },
+    {
+      "id": 18290000,
+      "key": "active:회전격",
+      "name": "회전격",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_029.png"
+    },
+    {
+      "id": 18200000,
+      "key": "active:충격 해제",
+      "name": "충격 해제",
+      "skillType": "active",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_002.png"
+    },
+    {
+      "id": 18710000,
+      "key": "passive:생명의 축복",
+      "name": "생명의 축복",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_012.png"
+    },
+    {
+      "id": 18720000,
+      "key": "passive:십자 방어",
+      "name": "십자 방어",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_002.png"
+    },
+    {
+      "id": 18730000,
+      "key": "passive:보호진",
+      "name": "보호진",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_001.png"
+    },
+    {
+      "id": 18740000,
+      "key": "passive:고취의 주문",
+      "name": "고취의 주문",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_011.png"
+    },
+    {
+      "id": 18750000,
+      "key": "passive:공격 준비",
+      "name": "공격 준비",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_005.png"
+    },
+    {
+      "id": 18760000,
+      "key": "passive:충격 적중",
+      "name": "충격 적중",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_006.png"
+    },
+    {
+      "id": 18770000,
+      "key": "passive:격노의 주문",
+      "name": "격노의 주문",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_007.png"
+    },
+    {
+      "id": 18780000,
+      "key": "passive:대지의 약속",
+      "name": "대지의 약속",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_010.png"
+    },
+    {
+      "id": 18790000,
+      "key": "passive:생존 의지",
+      "name": "생존 의지",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_GL_SKILL_Passive_009.png"
+    },
+    {
+      "id": 18800000,
+      "key": "passive:바람의 약속",
+      "name": "바람의 약속",
+      "skillType": "passive",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_Passive_008.png"
+    },
+    {
+      "id": 18220000,
       "key": "stigma:멸화",
       "name": "멸화",
       "skillType": "stigma",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_022.png"
     },
     {
-      "key": "stigma:분쇄격",
-      "name": "분쇄격",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_043.png"
-    },
-    {
+      "id": 18190000,
       "key": "stigma:불패의 진언",
       "name": "불패의 진언",
       "skillType": "stigma",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_019.png"
     },
     {
-      "key": "stigma:수호의 축복",
-      "name": "수호의 축복",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_042.png"
-    },
-    {
-      "key": "stigma:질주의 진언",
-      "name": "질주의 진언",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_016.png"
-    },
-    {
-      "key": "stigma:질풍의 권능",
-      "name": "질풍의 권능",
-      "skillType": "stigma",
-      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_025.png"
-    },
-    {
+      "id": 18140000,
       "key": "stigma:집중 방어",
       "name": "집중 방어",
       "skillType": "stigma",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_014.png"
     },
     {
+      "id": 18160000,
+      "key": "stigma:질주의 진언",
+      "name": "질주의 진언",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_016.png"
+    },
+    {
+      "id": 18130000,
+      "key": "stigma:분쇄격",
+      "name": "분쇄격",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_043.png"
+    },
+    {
+      "id": 18330000,
+      "key": "stigma:마르쿠탄의 분노",
+      "name": "마르쿠탄의 분노",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_033.png"
+    },
+    {
+      "id": 18240000,
       "key": "stigma:차단의 권능",
       "name": "차단의 권능",
       "skillType": "stigma",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_024.png"
     },
     {
+      "id": 18230000,
+      "key": "stigma:결박의 낙인",
+      "name": "결박의 낙인",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_023.png"
+    },
+    {
+      "id": 18170000,
       "key": "stigma:쾌유의 손길",
       "name": "쾌유의 손길",
       "skillType": "stigma",
       "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_017.png"
+    },
+    {
+      "id": 18250000,
+      "key": "stigma:질풍의 권능",
+      "name": "질풍의 권능",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_025.png"
+    },
+    {
+      "id": 18420000,
+      "key": "stigma:수호의 축복",
+      "name": "수호의 축복",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_042.png"
+    },
+    {
+      "id": 18700000,
+      "key": "stigma:강습 충격",
+      "name": "강습 충격",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CO_SKILL_003.png"
+    },
+    {
+      "id": 18440000,
+      "key": "stigma:결계의 주문",
+      "name": "결계의 주문",
+      "skillType": "stigma",
+      "iconUrl": "https://assets.playnccdn.com/static-aion2-gamedata/resources/ICON_CH_SKILL_044.png"
     }
   ]
 }

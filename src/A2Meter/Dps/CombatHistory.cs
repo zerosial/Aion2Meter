@@ -16,6 +16,9 @@ internal sealed class CombatRecord
     public long AverageDps { get; set; }
     public long PeakDps { get; set; }
     public DpsSnapshot Snapshot { get; set; } = new();
+    public List<TimelineEntry>? Timeline { get; set; }
+    public List<HitLogEntry>? HitLog { get; set; }
+    public int? DungeonId { get; set; }
 }
 
 /// Saves / loads combat records as JSON files under %AppData%\A2Meter\history\.

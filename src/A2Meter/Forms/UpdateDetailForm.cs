@@ -149,21 +149,20 @@ internal sealed class UpdateDetailForm : Form
         SendMessage(Handle, 0x00A1, (IntPtr)2, IntPtr.Zero);
     }
 
-    private async void OnDownloadClick(object? sender, EventArgs e)
+    private void OnDownloadClick(object? sender, EventArgs e)
     {
         try
         {
             _btnDownload.Enabled = false;
-            _btnDownload.Text = "다운로드 중...";
-
-            await AutoUpdater.ApplyAsync(_downloadUrl, _version, msg => Console.Error.WriteLine(msg));
+            _btnDownload.Text = "업데이트 중...";
 
             AppSettings.Instance.Save();
+            AutoUpdater.LaunchUpdaterAndExit(_downloadUrl, msg => Console.Error.WriteLine(msg));
             Environment.Exit(0);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[updater] apply failed: {ex.Message}");
+            Console.Error.WriteLine($"[updater] launch failed: {ex.Message}");
             _btnDownload.Text = "실패 — 다시 시도";
             _btnDownload.Enabled = true;
         }

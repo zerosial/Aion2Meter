@@ -26,14 +26,12 @@ internal sealed class AppSettings
 
     // ── overlay behavior ──
     public bool OverlayOnlyWhenAion { get; set; } = true;
-    public bool FrameGenerationCompatMode { get; set; }
-    public bool PerformanceMode { get; set; }
     public string GpuMode { get; set; } = "on";   // "on" | "off"
     public bool GpuModeUserOverride { get; set; }
-    public bool PromiscuousMode { get; set; }
 
     // ── visual ──
-    public int Opacity { get; set; } = 90;       // 0..100
+    public int Opacity { get; set; } = 90;       // 0..100  — background opacity
+    public int BarOpacity { get; set; } = 100;     // 0..100  — DPS bar opacity
     public string FontName { get; set; } = "Malgun Gothic";
     public int FontWeight { get; set; } = 400;  // 100~900 (Normal=400, Bold=700)
     public float FontSize { get; set; } = 9f;
@@ -46,9 +44,11 @@ internal sealed class AppSettings
         public string Background { get; set; } = "#1E1E2A";  // form bg
         public string Header     { get; set; } = "#252535";  // header bg
         public string Border     { get; set; } = "#3A3A4A";  // border/dividers
-        public string TextPrimary   { get; set; } = "#C8C8D0"; // main text
-        public string TextSecondary { get; set; } = "#6E6E80"; // dim text
+        public string TextPrimary   { get; set; } = "#D5D5DB"; // main text
+        public string TextSecondary { get; set; } = "#C2C2CD"; // dim text
         public string Accent     { get; set; } = "#4DE8E0";  // accent/highlight
+        public string Elyos      { get; set; } = "#8CD1FF";  // 천족 이름
+        public string Asmodian   { get; set; } = "#C2A6FF";  // 마족 이름
 
         // ── helpers (not serialized) ──
         [JsonIgnore] public System.Drawing.Color BgColor      => ParseHex(Background);
@@ -57,6 +57,8 @@ internal sealed class AppSettings
         [JsonIgnore] public System.Drawing.Color TextColor    => ParseHex(TextPrimary);
         [JsonIgnore] public System.Drawing.Color TextDimColor => ParseHex(TextSecondary);
         [JsonIgnore] public System.Drawing.Color AccentColor  => ParseHex(Accent);
+        [JsonIgnore] public System.Drawing.Color ElyosColor   => ParseHex(Elyos);
+        [JsonIgnore] public System.Drawing.Color AsmodianColor => ParseHex(Asmodian);
 
         public static System.Drawing.Color ParseHex(string hex)
         {
@@ -64,33 +66,24 @@ internal sealed class AppSettings
             catch { return System.Drawing.Color.Gray; }
         }
     }
-    public int TextScale { get; set; } = 100;
     public int FontScale { get; set; } = 100;
     public int RowHeight { get; set; } = 90;
-    public string UiStyle { get; set; } = "modern";
-    public string? ThemeJson { get; set; }
 
     // ── shortcuts ──
     public ShortcutSettings Shortcuts { get; set; } = new();
 
     // ── DPS panel preferences ──
-    public bool KeepPartyOnRefresh { get; set; } = true;
-    public bool KeepSelfOnRefresh { get; set; } = true;
-    public bool AutoTabSwitch { get; set; } = true;
-    public string DpsPercentMode { get; set; } = "party";
-    public string ScoreDisplay { get; set; } = "both";
-    public string ScoreFormat { get; set; } = "full";
-    public string DpsTimeMode { get; set; } = "wallclock";
-    public string NumberFormat { get; set; } = "abbreviated";  // "full" | "abbreviated"
+    public string DpsPercentMode { get; set; } = "boss"; // "boss" | "party"
+    public string NumberFormat { get; set; } = "full";  // "full" | "abbreviated"
 
     // ── toggle display ──
     public bool ShowCombatPower { get; set; } = true;
     public bool ShowCombatScore { get; set; } = true;
 
     // ── DPS bar layout: 3 configurable slots ──
-    public BarSlotConfig BarSlot1 { get; set; } = new() { Content = "percent", FontSize = 8f, Color = "#6E6E80" };
-    public BarSlotConfig BarSlot2 { get; set; } = new() { Content = "damage",  FontSize = 8f, Color = "#6E6E80" };
-    public BarSlotConfig BarSlot3 { get; set; } = new() { Content = "dps",     FontSize = 9f, Color = "#E8C84D" };
+    public BarSlotConfig BarSlot1 { get; set; } = new() { Content = "damage", FontSize = 8f, Color = "#DADADE" };
+    public BarSlotConfig BarSlot2 { get; set; } = new() { Content = "dps",  FontSize = 8f, Color = "#DADADE" };
+    public BarSlotConfig BarSlot3 { get; set; } = new() { Content = "percent",     FontSize = 9f, Color = "#E8C84D" };
 
     // ── secondary windows ──
     public int DetailPanelX { get; set; } = -1;
@@ -105,10 +98,6 @@ internal sealed class AppSettings
     public int SettingsPanelY { get; set; } = -1;
     public int SettingsPanelWidth { get; set; } = 400;
     public int SettingsPanelHeight { get; set; } = 420;
-
-    // ── consent / identity ──
-    public string? ConsentVersion { get; set; }
-    public DateTime? ConsentedAt { get; set; }
 
     // ── per-machine state stored in a sibling file ──
     [JsonIgnore]

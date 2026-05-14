@@ -74,20 +74,53 @@ internal sealed class SettingsPanelForm : Form
         var scrollPanel = new DarkScrollPanel { Dock = DockStyle.Fill, BackColor = theme.BgColor };
         var content = new Panel { BackColor = theme.BgColor, Location = Point.Empty };
 
-        int y = 20;
+        int y = 14;
         const int left = 24;
+
+        // ─── Settings export / import / reset ───────────────────
+        content.Controls.Add(SectionLabel("설정 저장", left, y));
+        y += 22;
+        var btnExportAll = StyledButton("내보내기", left, y, 90);
+        btnExportAll.Click += (_, _) => ExportSettings(settings);
+        content.Controls.Add(btnExportAll);
+
+        var btnImportAll = StyledButton("불러오기", left + 100, y, 90);
+        btnImportAll.Click += (_, _) =>
+        {
+            if (ImportSettings(settings))
+            {
+                SettingsChanged?.Invoke();
+                // Reopen to reflect all changes.
+                Close();
+            }
+        };
+        content.Controls.Add(btnImportAll);
+
+        var btnResetAll = StyledButton("초기화", left + 200, y, 76);
+        btnResetAll.Click += (_, _) =>
+        {
+            var result = MessageBox.Show("모든 설정을 초기화하시겠습니까?", "설정 초기화",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result != DialogResult.Yes) return;
+            ResetAllSettings(settings);
+            SettingsChanged?.Invoke();
+            Close();
+        };
+        content.Controls.Add(btnResetAll);
+        y += 36;
 
         // ─── 0. UI Theme colors ─────────────────────────────────
         content.Controls.Add(SectionLabel("테마 색상", left, y));
         y += 22;
-        string[] themeLabels = { "배경", "헤더", "보더", "텍스트", "보조 텍스트", "강조" };
-        Func<string>[] themeGetters = { () => theme.Background, () => theme.Header, () => theme.Border, () => theme.TextPrimary, () => theme.TextSecondary, () => theme.Accent };
+        string[] themeLabels = { "배경", "헤더", "보더", "텍스트", "보조 텍스트", "강조", "천족", "마족" };
+        Func<string>[] themeGetters = { () => theme.Background, () => theme.Header, () => theme.Border, () => theme.TextPrimary, () => theme.TextSecondary, () => theme.Accent, () => theme.Elyos, () => theme.Asmodian };
         Action<string>[] themeSetters = {
             v => theme.Background = v, v => theme.Header = v, v => theme.Border = v,
-            v => theme.TextPrimary = v, v => theme.TextSecondary = v, v => theme.Accent = v };
+            v => theme.TextPrimary = v, v => theme.TextSecondary = v, v => theme.Accent = v,
+            v => theme.Elyos = v, v => theme.Asmodian = v };
 
-        var themeSwatches = new ColorSwatch[6];
-        for (int i = 0; i < 6; i++)
+        var themeSwatches = new ColorSwatch[themeLabels.Length];
+        for (int i = 0; i < themeLabels.Length; i++)
         {
             int col = i % 3;
             int row = i / 3;
@@ -116,46 +149,7 @@ internal sealed class SettingsPanelForm : Form
                 AutoSize = true, Location = new Point(sx + 22, sy + 3), BackColor = Color.Transparent,
             });
         }
-        y += 70;
-
-        // Theme export/import/reset buttons
-        var btnExport = StyledButton("내보내기", left, y, 90);
-        btnExport.Click += (_, _) => ExportTheme(settings);
-        content.Controls.Add(btnExport);
-
-        var btnImport = StyledButton("불러오기", left + 100, y, 90);
-        btnImport.Click += (_, _) =>
-        {
-            if (ImportTheme(settings))
-            {
-                SettingsChanged?.Invoke();
-                var t = settings.Theme;
-                string[] vals = { t.Background, t.Header, t.Border, t.TextPrimary, t.TextSecondary, t.Accent };
-                for (int i = 0; i < 6; i++)
-                    try { themeSwatches[i].SwatchColor = ColorTranslator.FromHtml(vals[i]); } catch { }
-            }
-        };
-        content.Controls.Add(btnImport);
-
-        var btnReset = StyledButton("초기화", left + 200, y, 76);
-        btnReset.Click += (_, _) =>
-        {
-            var def = new AppSettings.ThemeColors();
-            var t = settings.Theme;
-            t.Background = def.Background;
-            t.Header = def.Header;
-            t.Border = def.Border;
-            t.TextPrimary = def.TextPrimary;
-            t.TextSecondary = def.TextSecondary;
-            t.Accent = def.Accent;
-            settings.SaveDebounced();
-            SettingsChanged?.Invoke();
-            string[] vals = { t.Background, t.Header, t.Border, t.TextPrimary, t.TextSecondary, t.Accent };
-            for (int i = 0; i < 6; i++)
-                try { themeSwatches[i].SwatchColor = ColorTranslator.FromHtml(vals[i]); } catch { }
-        };
-        content.Controls.Add(btnReset);
-        y += 40;
+        y += 102;
 
         // 1. Font family (DirectWrite-based list)
         content.Controls.Add(SectionLabel("폰트", left, y));
@@ -204,7 +198,7 @@ internal sealed class SettingsPanelForm : Form
         // 2. Font size
         content.Controls.Add(SectionLabel("폰트 크기", left, y));
         y += 22;
-        var sizeItems = new List<string> { "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "12", "13", "14" };
+        var sizeItems = new List<string> { "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "12", "13", "14", "14.5", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24" };
         var ddSize = new DarkDropdown(sizeItems, FindIndex(sizeItems, settings.FontSize.ToString("0.#")))
         {
             Location = new Point(left, y), Width = 90,
@@ -224,7 +218,7 @@ internal sealed class SettingsPanelForm : Form
         // 3. Row height
         content.Controls.Add(SectionLabel("레이아웃 크기", left, y));
         y += 22;
-        var slider = new StyledSlider(50, 150, settings.RowHeight)
+        var slider = new StyledSlider(50, 250, settings.RowHeight)
         { Location = new Point(left, y), Size = new Size(280, 26) };
         slider.ValueChanged += v =>
         {
@@ -233,6 +227,20 @@ internal sealed class SettingsPanelForm : Form
             SettingsChanged?.Invoke();
         };
         content.Controls.Add(slider);
+        y += 40;
+
+        // Bar opacity
+        content.Controls.Add(SectionLabel("DPS바 투명도", left, y));
+        y += 22;
+        var barOpacitySlider = new StyledSlider(5, 100, settings.BarOpacity)
+        { Location = new Point(left, y), Size = new Size(280, 26) };
+        barOpacitySlider.ValueChanged += v =>
+        {
+            settings.BarOpacity = v;
+            settings.SaveDebounced();
+            SettingsChanged?.Invoke();
+        };
+        content.Controls.Add(barOpacitySlider);
         y += 40;
 
         // 3.5 Number format
@@ -459,6 +467,25 @@ internal sealed class SettingsPanelForm : Form
         txt.KeyDown += (_, e) =>
         {
             e.SuppressKeyPress = true;
+
+            // ESC → cancel focus without changing the value.
+            if (e.KeyCode == Keys.Escape)
+            {
+                txt.Text = currentValue;
+                content.Focus();
+                return;
+            }
+
+            // Backspace → clear the shortcut.
+            if (e.KeyCode == Keys.Back)
+            {
+                currentValue = "";
+                txt.Text = "";
+                onChanged("");
+                content.Focus();
+                return;
+            }
+
             var parts = new List<string>();
             if (e.Alt) parts.Add("Alt");
             if (e.Control) parts.Add("Ctrl");
@@ -475,6 +502,7 @@ internal sealed class SettingsPanelForm : Form
                 };
                 parts.Add(keyName);
                 txt.Text = string.Join("+", parts);
+                currentValue = txt.Text;
                 onChanged(txt.Text);
             }
         };
@@ -540,54 +568,91 @@ internal sealed class SettingsPanelForm : Form
         return y + 34;
     }
 
-    private static void ExportTheme(AppSettings settings)
+    private static void ExportSettings(AppSettings settings)
     {
         using var dlg = new SaveFileDialog
         {
-            Title = "테마 내보내기",
+            Title = "설정 내보내기",
             Filter = "JSON 파일|*.json",
-            FileName = "a2meter_theme.json",
+            FileName = "a2meter_settings.json",
         };
         if (dlg.ShowDialog() != DialogResult.OK) return;
-        var t = settings.Theme;
-        var data = new
+        var json = System.Text.Json.JsonSerializer.Serialize(settings, new System.Text.Json.JsonSerializerOptions
         {
-            background = t.Background,
-            header = t.Header,
-            border = t.Border,
-            textPrimary = t.TextPrimary,
-            textSecondary = t.TextSecondary,
-            accent = t.Accent,
-        };
-        var json = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            WriteIndented = true,
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        });
         System.IO.File.WriteAllText(dlg.FileName, json);
     }
 
-    private static bool ImportTheme(AppSettings settings)
+    private static bool ImportSettings(AppSettings settings)
     {
         using var dlg = new OpenFileDialog
         {
-            Title = "테마 불러오기",
+            Title = "설정 불러오기",
             Filter = "JSON 파일|*.json",
         };
         if (dlg.ShowDialog() != DialogResult.OK) return false;
         try
         {
             var json = System.IO.File.ReadAllText(dlg.FileName);
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            var t = settings.Theme;
-            if (root.TryGetProperty("background", out var v))    t.Background    = v.GetString() ?? t.Background;
-            if (root.TryGetProperty("header", out v))            t.Header        = v.GetString() ?? t.Header;
-            if (root.TryGetProperty("border", out v))            t.Border        = v.GetString() ?? t.Border;
-            if (root.TryGetProperty("textPrimary", out v))       t.TextPrimary   = v.GetString() ?? t.TextPrimary;
-            if (root.TryGetProperty("textSecondary", out v))     t.TextSecondary = v.GetString() ?? t.TextSecondary;
-            if (root.TryGetProperty("accent", out v))            t.Accent        = v.GetString() ?? t.Accent;
-            settings.SaveDebounced();
+            var imported = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            });
+            if (imported == null) return false;
+
+            // Copy all serializable fields from imported to current instance.
+            settings.OverlayOnlyWhenAion = imported.OverlayOnlyWhenAion;
+            settings.GpuMode = imported.GpuMode;
+            settings.GpuModeUserOverride = imported.GpuModeUserOverride;
+            settings.Opacity = imported.Opacity;
+            settings.BarOpacity = imported.BarOpacity;
+            settings.FontName = imported.FontName;
+            settings.FontWeight = imported.FontWeight;
+            settings.FontSize = imported.FontSize;
+            settings.Theme = imported.Theme;
+            settings.FontScale = imported.FontScale;
+            settings.RowHeight = imported.RowHeight;
+            settings.Shortcuts = imported.Shortcuts ?? new ShortcutSettings();
+            settings.DpsPercentMode = imported.DpsPercentMode;
+            settings.NumberFormat = imported.NumberFormat;
+            settings.ShowCombatPower = imported.ShowCombatPower;
+            settings.ShowCombatScore = imported.ShowCombatScore;
+            settings.BarSlot1 = imported.BarSlot1;
+            settings.BarSlot2 = imported.BarSlot2;
+            settings.BarSlot3 = imported.BarSlot3;
+            settings.Save();
             return true;
         }
         catch { }
         return false;
+    }
+
+    private static void ResetAllSettings(AppSettings settings)
+    {
+        var def = new AppSettings();
+        settings.OverlayOnlyWhenAion = def.OverlayOnlyWhenAion;
+        settings.GpuMode = def.GpuMode;
+        settings.GpuModeUserOverride = def.GpuModeUserOverride;
+        settings.Opacity = def.Opacity;
+        settings.BarOpacity = def.BarOpacity;
+        settings.FontName = def.FontName;
+        settings.FontWeight = def.FontWeight;
+        settings.FontSize = def.FontSize;
+        settings.Theme = def.Theme;
+        settings.FontScale = def.FontScale;
+        settings.RowHeight = def.RowHeight;
+        settings.Shortcuts = def.Shortcuts;
+        settings.DpsPercentMode = def.DpsPercentMode;
+        settings.NumberFormat = def.NumberFormat;
+        settings.ShowCombatPower = def.ShowCombatPower;
+        settings.ShowCombatScore = def.ShowCombatScore;
+        settings.BarSlot1 = def.BarSlot1;
+        settings.BarSlot2 = def.BarSlot2;
+        settings.BarSlot3 = def.BarSlot3;
+        settings.Save();
     }
 
     private void PersistBounds()

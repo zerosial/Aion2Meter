@@ -28,6 +28,10 @@ internal sealed class ProtocolPipeline : IDisposable
     /// stash names here and enrich CombatHit on emission.
     private readonly ConcurrentDictionary<int, (string Name, int JobCode)> _identities = new();
 
+    /// entityId → combatPower buffered from CombatPower packets.
+    /// Replayed into the PartyMember when UserInfo arrives (order-independent).
+    private readonly ConcurrentDictionary<int, int> _combatPowers = new();
+
     /// petEntityId → ownerEntityId. Populated by Summon events so that
     /// summon damage is attributed to the summoning player.
     private readonly ConcurrentDictionary<int, int> _summons = new();
@@ -62,8 +66,10 @@ internal sealed class ProtocolPipeline : IDisposable
             {
                 if (_native != null)
                     _native.Dispatch(data, off, len);
-                else
-                    _dispatcher.Dispatch(data, off, len);
+                // Always run C# dispatcher — it handles packet types the native
+                // engine doesn't support (e.g. CharacterLookup). Events wired
+                // only once per type, so no double-fire.
+                _dispatcher.Dispatch(data, off, len);
                 _party.Feed(new ReadOnlySpan<byte>(data, off, len));
             },
             logSink: log);
@@ -73,21 +79,28 @@ internal sealed class ProtocolPipeline : IDisposable
         // Wire events from whichever engine is active.
         if (_native != null)
         {
-            _native.Damage      += OnDamage;
-            _native.UserInfo    += OnUserInfo;
-            _native.MobSpawn    += OnMobSpawn;
-            _native.BossHp      += OnBossHp;
-            _native.CombatPower += OnCombatPower;
-            _native.Summon      += OnSummon;
+            _native.Damage        += OnDamage;
+            _native.UserInfo      += OnUserInfo;
+            _native.MobSpawn      += OnMobSpawn;
+            _native.BossHp        += OnBossHp;
+            _native.CombatPower   += OnCombatPower;
+            _native.Summon        += OnSummon;
+            _native.Buff          += OnBuff;
+            _native.EntityRemoved += OnEntityRemoved;
         }
         else
         {
-            _dispatcher.Damage      += OnDamage;
-            _dispatcher.UserInfo    += OnUserInfo;
-            _dispatcher.MobSpawn    += OnMobSpawn;
-            _dispatcher.BossHp      += OnBossHp;
-            _dispatcher.CombatPower += OnCombatPower;
+            _dispatcher.Damage        += OnDamage;
+            _dispatcher.UserInfo      += OnUserInfo;
+            _dispatcher.MobSpawn      += OnMobSpawn;
+            _dispatcher.BossHp        += OnBossHp;
+            _dispatcher.Buff          += OnBuff;
+            _dispatcher.EntityRemoved += OnEntityRemoved;
         }
+
+        // Always wire C# dispatcher for packet types the native engine may miss.
+        _dispatcher.CharacterLookup += OnCharacterLookup;
+        _dispatcher.CombatPower     += OnCombatPower;
 
         _party.PartyList    += OnPartyRoster;
         _party.PartyUpdate  += OnPartyRoster;
@@ -96,6 +109,7 @@ internal sealed class ProtocolPipeline : IDisposable
         _party.PartyLeft    += OnPartyLeft;
         _party.PartyEjected += OnPartyLeft;
         _party.CombatPowerDetected += OnPartyCpByName;
+        _party.DungeonDetected     += OnDungeonDetected;
     }
 
     public void Dispose()
@@ -111,7 +125,8 @@ internal sealed class ProtocolPipeline : IDisposable
                           int healAmount, int isDot)
     {
         bool isHeal = healAmount > 0 && damage == 0;
-        long total  = damage + multiHitDamage + healAmount;
+        // healAmount is tracked separately — don't inflate damage totals.
+        long total  = isHeal ? healAmount : damage + multiHitDamage;
         if (total <= 0) return;
 
         // Resolve summon → owner so pet damage is attributed to the player.
@@ -135,14 +150,10 @@ internal sealed class ProtocolPipeline : IDisposable
         var (name, jobCode) = _identities.TryGetValue(resolvedActor, out var id)
             ? id : ($"#{resolvedActor}", -1);
 
-        TriggerCombatHit(resolvedActor, targetId, name, jobCode, total, specialFlags, isHeal, skillName, multiHitCount, isDot != 0, specs);
-
-        if (isHeal) return;
-
-        // Late-bind the focused boss to whichever known boss is actually being
-        // hit. This is the key to multi-boss zones (환영의 회랑) where two
-        // bosses spawn near-simultaneously — we follow the damage flow.
-        if (_knownBosses.TryGetValue(targetId, out var bossForHit))
+        // Update target BEFORE CombatHit so DpsPipeline sees the correct target
+        // when processing the hit (matches A2Power's per-hit target lookup).
+        MobTarget? bossForHit = null;
+        if (!isHeal && _knownBosses.TryGetValue(targetId, out bossForHit))
         {
             if (_currentTargetEntityId != targetId)
             {
@@ -150,6 +161,15 @@ internal sealed class ProtocolPipeline : IDisposable
                 _currentTarget = bossForHit;
                 TriggerTargetChanged(_currentTarget);
             }
+        }
+
+        TriggerCombatHit(resolvedActor, targetId, name, jobCode, total, specialFlags, isHeal, skillName, multiHitCount, isDot != 0, specs);
+
+        if (isHeal) return;
+
+        // Update HP after CombatHit so the damage is already recorded.
+        if (bossForHit != null)
+        {
             bossForHit.CurrentHp = Math.Max(0, bossForHit.CurrentHp - (damage + multiHitDamage));
             bossForHit.TotalDamageReceived += damage + multiHitDamage;
             TriggerTargetChanged(bossForHit);
@@ -159,6 +179,8 @@ internal sealed class ProtocolPipeline : IDisposable
     private void OnUserInfo(int entityId, string nickname, int serverId, int jobCode, int isSelf)
     {
         _identities[entityId] = (nickname, jobCode);
+        // Replay any buffered CombatPower so it's never lost regardless of packet order.
+        int cp = _combatPowers.TryGetValue(entityId, out var c) ? c : 0;
         TriggerPartyMemberSeen(new PartyMember
         {
             CharacterId = (uint)entityId,
@@ -167,6 +189,7 @@ internal sealed class ProtocolPipeline : IDisposable
             ServerName  = ServerMap.GetName(serverId),
             JobCode     = jobCode,
             IsSelf      = isSelf == 1,
+            CombatPower = cp,
         });
     }
 
@@ -177,24 +200,44 @@ internal sealed class ProtocolPipeline : IDisposable
 
     private void OnMobSpawn(int mobId, int mobCode, int hp, int isBoss)
     {
-        if (isBoss == 0 || hp <= 0) return;
+        // A2Power: GetMobName → FormatUnknownMobName fallback. null이면 drop하지 않음.
         var name = _skills.GetMobName(mobCode);
-        if (name == null || name.StartsWith("M_PD_") || name.Contains("Invisible")) return;
+        if (string.IsNullOrEmpty(name))
+            name = $"몹#{mobCode}";
+        if (name.StartsWith("M_PD_") || name.Contains("Invisible")) return;
 
-        var t = new MobTarget
+        bool dummy = IsDummy(name);
+        bool boss = isBoss != 0 || _skills.IsMobBoss(mobCode);
+        if (!boss && !dummy) return;
+
+        // A2Power: GetOrAdd + DeathConfirmed 시 리셋.
+        if (!_knownBosses.TryGetValue(mobId, out var t))
         {
-            EntityId  = mobId,
-            Name      = name,
-            MaxHp     = hp,
-            CurrentHp = hp,
-            IsBoss    = true,
-        };
-        _knownBosses[mobId] = t;
+            t = new MobTarget { EntityId = mobId };
+            _knownBosses[mobId] = t;
+            (_source as IInternalEventRaise)?.RaiseMobSpawned(t);
+        }
+        else if (t.DeathConfirmed)
+        {
+            t.TotalDamageReceived = 0;
+            t.DeathConfirmed = false;
+            t.FirstBossHpSet = false;
+            t.FirstBossHpSample = 0;
+            t.HpAtLastSample = 0;
+            t.DamageAtLastHpSample = 0;
+        }
 
-        // Don't latch _currentTarget yet — wait for actual damage to land
-        // (multi-boss zones may spawn 2+ bosses near-simultaneously).
-        // But if this is the very first boss we've ever seen, surface it so
-        // the canvas can at least show its name + full HP.
+        t.Name = name;
+        t.IsBoss = boss;
+
+        // A2Power: hp > 0일 때만 MaxHp 설정.
+        if (hp > 0)
+        {
+            long resolvedHp = (name == "가라앉은 에몬") ? ResolveEmonHp(hp) : hp;
+            t.MaxHp = resolvedHp;
+            t.CurrentHp = resolvedHp;
+        }
+
         if (_currentTarget == null)
         {
             _currentTargetEntityId = mobId;
@@ -240,7 +283,9 @@ internal sealed class ProtocolPipeline : IDisposable
 
     private void OnCombatPower(int entityId, int combatPower)
     {
-        // Re-emit as a (sparse) PartyMember with the existing identity if known.
+        // Always buffer so OnUserInfo can replay if identity isn't known yet.
+        _combatPowers[entityId] = combatPower;
+
         if (!_identities.TryGetValue(entityId, out var id)) return;
         TriggerPartyMemberSeen(new PartyMember
         {
@@ -253,9 +298,40 @@ internal sealed class ProtocolPipeline : IDisposable
 
     private void OnBossHp(int entityId, int currentHp)
     {
-        if (!_knownBosses.TryGetValue(entityId, out var t)) return;
+        // A2Power: _mobs에 없거나 IsBoss가 아니면 무시.
+        if (!_knownBosses.TryGetValue(entityId, out var t) || !t.IsBoss) return;
+
+        // Track HP samples for cumulative damage death detection (A2Power).
+        if (currentHp > 0)
+        {
+            // Boss is alive — undo death confirmation if it was set (A2Power: HP 재수신으로 처치확정 해제).
+            if (t.DeathConfirmed)
+                t.DeathConfirmed = false;
+            t.HpAtLastSample = currentHp;
+            t.DamageAtLastHpSample = t.TotalDamageReceived;
+
+            // Track first BossHp sample below MaxHp for MaxHp correction.
+            if (!t.FirstBossHpSet && currentHp < t.MaxHp)
+            {
+                t.FirstBossHpSample = currentHp;
+                t.FirstBossHpSet = true;
+            }
+        }
+        else
+        {
+            t.DeathConfirmed = true;
+            t.HpAtLastSample = 0;
+            t.DamageAtLastHpSample = t.TotalDamageReceived;
+        }
+
         t.CurrentHp = Math.Max(0, currentHp);
+        if (currentHp > t.MaxHp) t.MaxHp = currentHp;
         if (entityId == _currentTargetEntityId) TriggerTargetChanged(t);
+    }
+
+    private void OnEntityRemoved(int entityId)
+    {
+        (_source as IInternalEventRaise)?.RaiseEntityRemoved(entityId);
     }
 
     // The IPacketSource events are publicly read-only; we route through reflection-free
@@ -265,11 +341,51 @@ internal sealed class ProtocolPipeline : IDisposable
         => (_source as IInternalEventRaise)?.RaiseCombatHit(
             new CombatHitArgs(actorId, targetId, name ?? "", jobCode, damage, hitFlags, isHeal, skill, extraHits, isDot, specs));
 
+    private static bool IsDummy(string? name)
+        => name != null && (name.Contains("허수아비") || name.Contains("샌드백"));
+
+    /// Emon boss HP resolution table (A2Power _emonHpTiers).
+    private static readonly (long packetHp, long realHp)[] EmonHpTiers =
+    {
+        (22200000L, 32200000L),
+        (60750000L, 85100000L),
+    };
+
+    private static long ResolveEmonHp(long packetHp)
+    {
+        foreach (var (pHp, rHp) in EmonHpTiers)
+            if ((double)Math.Abs(packetHp - pHp) < (double)pHp * 0.05)
+                return rHp;
+        return packetHp < 15000000 ? packetHp : (long)(packetHp * 1.4);
+    }
+
     private void TriggerTargetChanged(MobTarget target)
         => (_source as IInternalEventRaise)?.RaiseTargetChanged(target);
 
     private void TriggerPartyMemberSeen(PartyMember member)
         => (_source as IInternalEventRaise)?.RaisePartyMemberSeen(member);
+
+    private void OnDungeonDetected(int dungeonId, int stage)
+        => (_source as IInternalEventRaise)?.RaiseDungeonChanged(dungeonId);
+
+    private void OnBuff(int entityId, int buffId, int type, uint durationMs, long timestamp, int casterId)
+        => (_source as IInternalEventRaise)?.RaiseBuffEvent(entityId, buffId, type, durationMs, timestamp);
+
+    private void OnCharacterLookup(int entityId, string nickname, int serverId, int jobCode, int level, int combatPower)
+    {
+        _identities[entityId] = (nickname, jobCode);
+        TriggerPartyMemberSeen(new PartyMember
+        {
+            CharacterId = (uint)entityId,
+            Nickname    = nickname,
+            ServerId    = serverId,
+            ServerName  = ServerMap.GetName(serverId),
+            JobCode     = jobCode,
+            Level       = level,
+            CombatPower = combatPower,
+            IsLookup    = true,
+        });
+    }
 }
 
 /// Internal hook that lets ProtocolPipeline re-raise events on its source
@@ -278,6 +394,10 @@ internal interface IInternalEventRaise
 {
     void RaiseCombatHit(CombatHitArgs args);
     void RaiseTargetChanged(MobTarget? target);
+    void RaiseMobSpawned(MobTarget mob);
+    void RaiseEntityRemoved(int entityId);
     void RaisePartyMemberSeen(PartyMember member);
     void RaisePartyLeft();
+    void RaiseDungeonChanged(int dungeonId);
+    void RaiseBuffEvent(int entityId, int buffId, int type, uint durationMs, long timestamp);
 }

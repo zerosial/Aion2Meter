@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using A2Meter.Core;
 using A2Meter.Direct2D;
@@ -7,20 +10,14 @@ using A2Meter.Dps;
 
 namespace A2Meter.Forms;
 
-/// Frameless, topmost overlay shell.
-/// Layout (native + D2D, no WebView2 in the overlay process anymore):
-///   [OverlayHeaderPanel: WinForms ~36px]   ← brand + lock/settings/close buttons
-///   [DpsCanvas:          Direct2D fills]   ← bars/numbers (high-frequency redraw)
-///
-/// The secondary windows (Settings/DpsDetail/CombatRecords/PlayerNote/Consent)
-/// still use WebView2 because they're complex HTML and only opened on demand.
+/// Frameless, topmost overlay — 100% D2D rendered (no WinForms child controls).
+/// Uses offscreen D2D → UpdateLayeredWindow for per-pixel alpha support.
 internal sealed class OverlayForm : Form
 {
     private const int HeaderHeight = 36;
     private const int ResizeMargin = 10;
 
-    private readonly OverlayHeaderPanel _header;
-    private readonly DpsCanvas _dps;
+    private OverlayRenderer? _renderer;
 
     private IPacketSource? _source;
     private readonly DpsMeter      _meter   = new();
@@ -28,20 +25,41 @@ internal sealed class OverlayForm : Form
     private DpsPipeline? _pipeline;
     private ProtocolPipeline? _protocol;
     private ForegroundWatcher? _fgWatcher;
-    private CompactOverlayForm? _compactForm;
 
     /// Optional override: when set before Load fires, OverlayForm uses this packet source
     /// instead of constructing a live PacketSniffer. Used for replay mode.
     public IPacketSource? PacketSourceOverride { get; set; }
 
-    private bool _locked;          // when locked, click-through + ignore drag/resize
-    private bool _compactMode;
+    private bool _locked;
+    private bool _anonymous;
     private bool _appCloseRequested;
-    private bool _loaded;          // true after Load — prevents saving during init
+    private bool _loaded;
+    private bool _sliderDragging;
 
     public HotkeyManager? Hotkeys { get; set; }
     public SecondaryWindows Windows { get; }
     public event EventHandler? AppCloseRequested;
+
+    // ── Win32 for mouse tracking ──
+    private const int WM_MOUSEMOVE    = 0x0200;
+    private const int WM_LBUTTONDOWN  = 0x0201;
+    private const int WM_LBUTTONUP    = 0x0202;
+    private const int WM_MOUSELEAVE   = 0x02A3;
+    private const int TME_LEAVE       = 0x0002;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TRACKMOUSEEVENT
+    {
+        public int cbSize;
+        public int dwFlags;
+        public IntPtr hwndTrack;
+        public int dwHoverTime;
+    }
+    [DllImport("user32.dll")] private static extern bool TrackMouseEvent(ref TRACKMOUSEEVENT evt);
+    [DllImport("user32.dll")] private static extern IntPtr SetCapture(IntPtr hWnd);
+    [DllImport("user32.dll")] private static extern bool ReleaseCapture();
+
+    private bool _trackingMouse;
 
     private void PersistWindowState()
     {
@@ -55,9 +73,26 @@ internal sealed class OverlayForm : Form
         s.SaveDebounced();
     }
 
-    protected override void OnMove(EventArgs e)      { base.OnMove(e);      PersistWindowState(); }
-    protected override void OnResize(EventArgs e)    { base.OnResize(e);    PersistWindowState(); }
-    protected override void OnResizeEnd(EventArgs e) { base.OnResizeEnd(e); PersistWindowState(); }
+    protected override void OnMove(EventArgs e)
+    {
+        base.OnMove(e);
+        PersistWindowState();
+        RequestRender();
+    }
+
+    protected override void OnResize(EventArgs e)
+    {
+        base.OnResize(e);
+        PersistWindowState();
+        RequestRender();
+    }
+
+    protected override void OnResizeEnd(EventArgs e)
+    {
+        base.OnResizeEnd(e);
+        PersistWindowState();
+        RequestRender();
+    }
 
     public OverlayForm()
     {
@@ -73,27 +108,7 @@ internal sealed class OverlayForm : Form
         int wantW = ws.Width  >= MinimumSize.Width  ? ws.Width  : 460;
         int wantH = ws.Height >= MinimumSize.Height ? ws.Height : 500;
         Size = new Size(wantW, wantH);
-        BackColor = AppSettings.Instance.Theme.BgColor;
         Windows = new SecondaryWindows(this);
-
-        _header = new OverlayHeaderPanel();
-        _header.LockToggled      += SetLocked;
-        _header.AnonymousToggled += anon => { _dps.AnonymousMode = anon; _dps.Invalidate(); };
-        _header.HistoryClicked   += OpenHistory;
-        _header.SettingsClicked  += OpenSettings;
-        _header.OpacityChanged   += OnOpacitySlider;
-        _header.CloseClicked     += RequestAppClose;
-
-        _dps = new DpsCanvas { Dock = DockStyle.Fill };
-        _dps.PlayerRowClicked += row =>
-        {
-            var detail = Windows.Open<DpsDetailForm>();
-            detail.SetData(row);
-        };
-        _dps.CountdownClicked += OnCountdownClicked;
-
-        Controls.Add(_dps);
-        Controls.Add(_header);
 
         Load += (_, _) => { _loaded = true; InitOverlay(); };
     }
@@ -115,12 +130,14 @@ internal sealed class OverlayForm : Form
 
     private void InitOverlay()
     {
-        var alpha = (byte)Math.Clamp(AppSettings.Instance.Opacity * 255 / 100, 30, 255);
-        Win32Native.SetLayeredWindowAttributes(Handle, 0, alpha, Win32Native.LWA_ALPHA);
+        _renderer = new OverlayRenderer();
+        _renderer.Init();
 
         _source ??= PacketSourceOverride ?? new PacketSniffer();
         _protocol = new ProtocolPipeline(_source, log: msg => Console.Error.WriteLine(msg));
-        _pipeline = new DpsPipeline(_source, _meter, _party, _dps);
+        _pipeline = new DpsPipeline(_source, _meter, _party);
+        _pipeline.DataPushed += OnDataPushed;
+        _pipeline.CombatStarted += OnCombatStarted;
         try { _pipeline.Start(); }
         catch (Exception ex)
         {
@@ -132,6 +149,99 @@ internal sealed class OverlayForm : Form
         _fgWatcher.ActiveChanged += OnAionActiveChanged;
         if (AppSettings.Instance.OverlayOnlyWhenAion)
             _fgWatcher.Start();
+
+        RequestRender();
+    }
+
+    /// Called at ~10 Hz from the pipeline timer — push data to renderer and re-render.
+    private void OnDataPushed(IReadOnlyList<DpsCanvas.PlayerRow> rows, long total,
+        string timer, MobTarget? target, DpsCanvas.SessionSummary? summary)
+    {
+        if (_renderer == null || !IsHandleCreated || IsDisposed) return;
+        try
+        {
+            BeginInvoke(() =>
+            {
+                if (_renderer == null) return;
+                _renderer.CountdownSec = _pipeline?.CountdownSeconds ?? 0;
+                _renderer.CountdownExpired = _pipeline?.CountdownExpired ?? false;
+                _renderer.PingMs = _pipeline?.Ping.CurrentPingMs ?? 0;
+                _renderer.SetData(rows, total, timer, target, summary);
+                _renderer.SetPartyData(BuildPartyRows());
+                RequestRender();
+            });
+        }
+        catch { }
+    }
+
+    private void OnCombatStarted()
+    {
+        if (_renderer == null || !IsHandleCreated || IsDisposed) return;
+        try
+        {
+            BeginInvoke(() =>
+            {
+                if (_renderer != null && _renderer.ActiveTab != OverlayRenderer.TabId.Dps)
+                {
+                    _renderer.ActiveTab = OverlayRenderer.TabId.Dps;
+                    RequestRender();
+                }
+            });
+        }
+        catch { }
+    }
+
+    private List<OverlayRenderer.PartyRow> BuildPartyRows()
+    {
+        var list = new List<OverlayRenderer.PartyRow>();
+        PartyMember[] snapshot;
+        try { snapshot = _party.Members.Values.ToArray(); }
+        catch { return list; }
+        foreach (var pm in snapshot)
+        {
+            if (string.IsNullOrEmpty(pm.Nickname)) continue;
+            if (!pm.IsSelf && !pm.IsPartyMember && !pm.IsLookup) continue;
+
+            int cp = pm.CombatPower;
+            int score = 0;
+            int sid = pm.ServerId;
+            string sname = pm.ServerName;
+            if (string.IsNullOrEmpty(sname) && sid > 0)
+                sname = Dps.Protocol.ServerMap.GetName(sid);
+
+            var api = Api.SkillLevelCache.Instance.Get(pm.Nickname, sid);
+            if (api != null)
+            {
+                if (cp == 0 && api.CombatPower > 0) cp = api.CombatPower;
+                if (score == 0 && api.CombatScore > 0) score = api.CombatScore;
+            }
+
+            list.Add(new OverlayRenderer.PartyRow(
+                Name: !string.IsNullOrEmpty(sname) && !pm.Nickname.Contains('[') ? $"{pm.Nickname}[{sname}]" : pm.Nickname,
+                JobIconKey: Dps.JobMapping.GameToJobName(pm.JobCode),
+                CombatPower: cp,
+                CombatScore: score,
+                ServerId: sid,
+                ServerName: sname,
+                IsSelf: pm.IsSelf,
+                Level: pm.Level));
+        }
+        // Self first, then sort by CP descending.
+        list.Sort((a, b) =>
+        {
+            if (a.IsSelf != b.IsSelf) return a.IsSelf ? -1 : 1;
+            return b.CombatPower.CompareTo(a.CombatPower);
+        });
+        return list;
+    }
+
+    /// Render the D2D frame and present via UpdateLayeredWindow.
+    private void RequestRender()
+    {
+        if (_renderer == null || !IsHandleCreated || IsDisposed) return;
+        if (Width <= 0 || Height <= 0) return;
+        _renderer.RenderFrame(Width, Height);
+        _renderer.PresentToLayeredWindow(Handle, Left, Top, Width, Height);
     }
 
     private void OnAionActiveChanged(bool active)
@@ -147,7 +257,6 @@ internal sealed class OverlayForm : Form
         if (enabled)
         {
             _fgWatcher?.Start();
-            // If Aion 2 is not currently active, hide immediately.
             if (_fgWatcher != null && !_fgWatcher.IsActive)
                 HideOverlay();
         }
@@ -161,17 +270,11 @@ internal sealed class OverlayForm : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         _fgWatcher?.Dispose();
-        _compactForm?.Close();
         _lockBtn?.Close();
         _pipeline?.Dispose();
         _protocol?.Dispose();
+        _renderer?.Dispose();
         base.OnFormClosed(e);
-    }
-
-    private void ApplyOpacity()
-    {
-        var alpha = (byte)Math.Clamp(AppSettings.Instance.Opacity * 255 / 100, 30, 255);
-        Win32Native.SetLayeredWindowAttributes(Handle, 0, alpha, Win32Native.LWA_ALPHA);
     }
 
     private void OpenHistory()
@@ -181,7 +284,6 @@ internal sealed class OverlayForm : Form
         form.FormClosed += (_, _) => _pipeline.ExitHistoryView();
         form.SetData(_pipeline.History, record =>
         {
-            // Pause live updates and show the historical snapshot.
             _pipeline.EnterHistoryView();
             var rows = _pipeline.MapSnapshotForCanvas(record.Snapshot);
             var summary = new DpsCanvas.SessionSummary(
@@ -193,7 +295,8 @@ internal sealed class OverlayForm : Form
                 TopActorDamage: rows.Count > 0 ? rows[0].Damage : 0,
                 BossName:       record.BossName);
             string timer = $"{(int)record.DurationSec / 60}:{(int)record.DurationSec % 60:00}";
-            _dps.SetData(rows, record.TotalDamage, timer, record.Snapshot.Target, summary);
+            _renderer?.SetData(rows, record.TotalDamage, timer, record.Snapshot.Target, summary);
+            RequestRender();
         });
     }
 
@@ -202,12 +305,8 @@ internal sealed class OverlayForm : Form
         var form = Windows.Open<SettingsPanelForm>();
         form.SettingsChanged += () =>
         {
-            _dps.ApplySettings();
-            _compactForm?.ApplySettings();
-            var t = AppSettings.Instance.Theme;
-            BackColor = t.BgColor;
-            _header.BackColor = t.HeaderColor;
-            _header.Invalidate();
+            _renderer?.ApplySettings();
+            RequestRender();
         };
     }
 
@@ -215,7 +314,7 @@ internal sealed class OverlayForm : Form
     {
         AppSettings.Instance.Opacity = value;
         AppSettings.Instance.SaveDebounced();
-        ApplyOpacity();
+        RequestRender();
     }
 
     private LockButtonForm? _lockBtn;
@@ -223,9 +322,11 @@ internal sealed class OverlayForm : Form
     private void SetLocked(bool locked)
     {
         _locked = locked;
+        _renderer?.SetLocked(locked);
         var ex = Win32Native.GetWindowLong(Handle, Win32Native.GWL_EXSTYLE);
-        if (locked) ex |=  Win32Native.WS_EX_TRANSPARENT;
-        else        ex &= ~Win32Native.WS_EX_TRANSPARENT;
+        bool passthrough = locked || (_renderer?.CompactMode ?? false);
+        if (passthrough) ex |=  Win32Native.WS_EX_TRANSPARENT;
+        else             ex &= ~Win32Native.WS_EX_TRANSPARENT;
         Win32Native.SetWindowLong(Handle, Win32Native.GWL_EXSTYLE, ex);
 
         if (locked)
@@ -238,104 +339,57 @@ internal sealed class OverlayForm : Form
         {
             _lockBtn?.Hide();
         }
+        RequestRender();
     }
 
     public void Unlock()
     {
         SetLocked(false);
-        _header.ForceUnlock();
         _lockBtn?.Hide();
     }
 
     public void ShowOverlay()
     {
-        if (_compactMode && _compactForm != null)
-        {
-            _compactForm.Show();
-            _compactForm.BringToFront();
-        }
-        else
-        {
-            if (!Visible) Show();
-            if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
-            BringToFront();
-        }
+        if (!Visible) Show();
+        if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+        BringToFront();
+        RequestRender();
     }
 
     public void HideOverlay()
     {
-        if (_compactMode && _compactForm != null)
-            _compactForm.Hide();
-        else
-            Hide();
+        Hide();
     }
 
     public void ToggleVisibility()
     {
-        bool isVisible = _compactMode && _compactForm != null
-            ? _compactForm.Visible
-            : Visible;
-        if (isVisible) HideOverlay(); else ShowOverlay();
+        if (Visible) HideOverlay(); else ShowOverlay();
     }
 
     public void ToggleCompact()
     {
-        _compactMode = !_compactMode;
+        if (_renderer == null) return;
+        bool compact = !_renderer.CompactMode;
+        _renderer.CompactMode = compact;
 
-        if (_compactMode)
-        {
-            _lockBtn?.Hide();
-            // Create compact overlay at same position/size.
-            _compactForm ??= new CompactOverlayForm();
-            _compactForm.Location = Location;
-            _compactForm.Size = Size;
-            // Subscribe to data updates + perf.
-            if (_pipeline != null)
-            {
-                _pipeline.DataPushed += OnCompactDataPushed;
-            }
-            _compactForm.Show();
-            _compactForm.RenderFrame();
-            Hide();
-        }
-        else
-        {
-            // Unsubscribe and hide compact form.
-            if (_pipeline != null)
-            {
-                _pipeline.DataPushed -= OnCompactDataPushed;
-            }
-            // Sync position from compact form back to main overlay.
-            if (_compactForm != null)
-            {
-                Location = _compactForm.Location;
-                PersistWindowState();
-            }
-            _compactForm?.Hide();
-            // Restore overlay.
-            Show();
-            if (_locked) _lockBtn?.Show();
-        }
-    }
-
-    private void OnCompactDataPushed(IReadOnlyList<Direct2D.DpsCanvas.PlayerRow> rows, long total,
-        string timer, Dps.MobTarget? target, Direct2D.DpsCanvas.SessionSummary? summary)
-    {
-        if (_compactForm == null) return;
-        _compactForm.PingMs = _pipeline?.Ping.CurrentPingMs ?? 0;
-        _compactForm.PushData(rows, total, timer, target, summary);
-    }
-
-    private void SetClickThrough(bool passThrough)
-    {
+        // Compact mode = full click-through
         var ex = Win32Native.GetWindowLong(Handle, Win32Native.GWL_EXSTYLE);
-        if (passThrough) ex |=  Win32Native.WS_EX_TRANSPARENT;
-        else             ex &= ~Win32Native.WS_EX_TRANSPARENT;
+        if (compact) ex |=  Win32Native.WS_EX_TRANSPARENT;
+        else if (!_locked) ex &= ~Win32Native.WS_EX_TRANSPARENT;
         Win32Native.SetWindowLong(Handle, Win32Native.GWL_EXSTYLE, ex);
+
+        RequestRender();
     }
 
     public void TriggerClearShortcut()  => _pipeline?.Reset();
-    public void TriggerSwitchTab()      { /* compact/full toggle is the only "tab" we have */ }
+    public void TriggerSwitchTab()
+    {
+        if (_renderer == null) return;
+        _renderer.ActiveTab = _renderer.ActiveTab == OverlayRenderer.TabId.Dps
+            ? OverlayRenderer.TabId.Party
+            : OverlayRenderer.TabId.Dps;
+        RequestRender();
+    }
 
     public void TriggerRestart()
     {
@@ -347,18 +401,21 @@ internal sealed class OverlayForm : Form
 
     public void TriggerAnonymousToggle()
     {
-        _dps.AnonymousMode = !_dps.AnonymousMode;
-        _header.SetAnonymous(_dps.AnonymousMode);
-        _dps.Invalidate();
+        _anonymous = !_anonymous;
+        _renderer?.SetAnonymous(_anonymous);
+        RequestRender();
     }
 
     private void OnCountdownClicked()
     {
         if (_pipeline == null) return;
         _pipeline.CycleCountdown();
-        _dps.CountdownSec = _pipeline.CountdownSeconds;
-        _dps.CountdownExpired = _pipeline.CountdownExpired;
-        _dps.Invalidate();
+        if (_renderer != null)
+        {
+            _renderer.CountdownSec = _pipeline.CountdownSeconds;
+            _renderer.CountdownExpired = _pipeline.CountdownExpired;
+        }
+        RequestRender();
     }
 
     public void RequestAppClose()
@@ -369,6 +426,8 @@ internal sealed class OverlayForm : Form
         Close();
     }
 
+    // ── WndProc: hit testing, mouse interaction ──
+
     protected override void WndProc(ref Message m)
     {
         if (m.Msg == HotkeyManager.WM_HOTKEY)
@@ -377,11 +436,17 @@ internal sealed class OverlayForm : Form
             return;
         }
 
+        // ── Snap-to-edge while dragging/resizing ──
+        if (m.Msg == Win32Native.WM_MOVING)
+        {
+            SnapEdges(m.LParam);
+            m.Result = IntPtr.Zero;
+        }
+
         if (m.Msg == Win32Native.WM_NCHITTEST && !_locked)
         {
             int lp = unchecked((int)(long)m.LParam);
-            var screenPt = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
-            var pt = PointToClient(screenPt);
+            var pt = PointToClient(new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF)));
 
             int hit = HitTestEdges(pt);
             if (hit != Win32Native.HTCLIENT)
@@ -390,18 +455,146 @@ internal sealed class OverlayForm : Form
                 return;
             }
 
-            // Drag from the header strip — but only outside of the header buttons.
-            if (pt.Y >= 0 && pt.Y < HeaderHeight)
+            // Drag from the toolbar area — but only outside of buttons/slider.
+            if (_renderer != null && _renderer.IsDragArea(pt))
             {
-                var headerPt = _header.PointToClient(screenPt);
-                if (_header.IsDragArea(headerPt))
+                m.Result = (IntPtr)Win32Native.HTCAPTION;
+                return;
+            }
+        }
+
+        // Mouse interaction for D2D toolbar + row clicks
+        if (m.Msg == WM_MOUSEMOVE && _renderer != null)
+        {
+            if (!_trackingMouse)
+            {
+                var tme = new TRACKMOUSEEVENT
                 {
-                    m.Result = (IntPtr)Win32Native.HTCAPTION;
-                    return;
+                    cbSize = Marshal.SizeOf<TRACKMOUSEEVENT>(),
+                    dwFlags = TME_LEAVE,
+                    hwndTrack = Handle,
+                };
+                TrackMouseEvent(ref tme);
+                _trackingMouse = true;
+            }
+
+            int lp = unchecked((int)(long)m.LParam);
+            var pt = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+
+            if (_sliderDragging)
+            {
+                float ratio = _renderer.SliderValueFromX(pt.X);
+                int val = 20 + (int)(ratio * 80);
+                OnOpacitySlider(Math.Clamp(val, 20, 100));
+                return;
+            }
+
+            var zone = _renderer.HitTest(pt);
+            _renderer.SetHoveredZone(zone);
+            RequestRender();
+        }
+
+        if (m.Msg == WM_MOUSELEAVE)
+        {
+            _trackingMouse = false;
+            _renderer?.SetHoveredZone(OverlayRenderer.ZoneId.None);
+            RequestRender();
+        }
+
+        if (m.Msg == WM_LBUTTONDOWN && _renderer != null)
+        {
+            int lp = unchecked((int)(long)m.LParam);
+            var pt = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+            var zone = _renderer.HitTest(pt);
+
+            if (zone == OverlayRenderer.ZoneId.Slider)
+            {
+                _sliderDragging = true;
+                SetCapture(Handle);
+                float ratio = _renderer.SliderValueFromX(pt.X);
+                int val = 20 + (int)(ratio * 80);
+                OnOpacitySlider(Math.Clamp(val, 20, 100));
+                return;
+            }
+        }
+
+        if (m.Msg == WM_LBUTTONUP && _renderer != null)
+        {
+            if (_sliderDragging)
+            {
+                _sliderDragging = false;
+                ReleaseCapture();
+                return;
+            }
+
+            int lp = unchecked((int)(long)m.LParam);
+            var pt = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+            var zone = _renderer.HitTest(pt);
+
+            switch (zone)
+            {
+                case OverlayRenderer.ZoneId.Lock:
+                    SetLocked(!_locked);
+                    break;
+                case OverlayRenderer.ZoneId.Anon:
+                    TriggerAnonymousToggle();
+                    break;
+                case OverlayRenderer.ZoneId.History:
+                    OpenHistory();
+                    break;
+                case OverlayRenderer.ZoneId.Settings:
+                    OpenSettings();
+                    break;
+                case OverlayRenderer.ZoneId.Close:
+                    RequestAppClose();
+                    break;
+                case OverlayRenderer.ZoneId.Countdown:
+                    OnCountdownClicked();
+                    break;
+                case OverlayRenderer.ZoneId.CpToggle:
+                {
+                    var s = AppSettings.Instance;
+                    s.ShowCombatPower = !s.ShowCombatPower;
+                    s.SaveDebounced();
+                    RequestRender();
+                    break;
+                }
+                case OverlayRenderer.ZoneId.ScoreToggle:
+                {
+                    var s = AppSettings.Instance;
+                    s.ShowCombatScore = !s.ShowCombatScore;
+                    s.SaveDebounced();
+                    RequestRender();
+                    break;
+                }
+                case OverlayRenderer.ZoneId.TabDps:
+                    if (_renderer.ActiveTab != OverlayRenderer.TabId.Dps)
+                    { _renderer.ActiveTab = OverlayRenderer.TabId.Dps; RequestRender(); }
+                    break;
+                case OverlayRenderer.ZoneId.TabParty:
+                    if (_renderer.ActiveTab != OverlayRenderer.TabId.Party)
+                    { _renderer.ActiveTab = OverlayRenderer.TabId.Party; RequestRender(); }
+                    break;
+                case OverlayRenderer.ZoneId.None:
+                {
+                    // Row click
+                    int rowIdx = _renderer.RowHitTest(pt.Y);
+                    if (rowIdx >= 0)
+                        OnPlayerRowClicked(rowIdx);
+                    break;
                 }
             }
         }
+
         base.WndProc(ref m);
+    }
+
+    private void OnPlayerRowClicked(int rowIdx)
+    {
+        var rows = _renderer?.GetRows();
+        if (rows == null || rowIdx < 0 || rowIdx >= rows.Count) return;
+        var detail = Windows.Open<DpsDetailForm>();
+        detail.SetData(rows[rowIdx]);
     }
 
     private int HitTestEdges(Point pt)
@@ -422,4 +615,35 @@ internal sealed class OverlayForm : Form
         if (B) return Win32Native.HTBOTTOM;
         return Win32Native.HTCLIENT;
     }
+
+    // ── Snap-to-edge (magnet) ──
+
+    private const int SnapDistance = 8;
+
+    private static unsafe void SnapEdges(IntPtr lParam)
+    {
+        ref var rc = ref *(RECT*)lParam;
+        int winW = rc.Right - rc.Left;
+        int winH = rc.Bottom - rc.Top;
+
+        var screen = Screen.FromRectangle(new Rectangle(rc.Left, rc.Top, winW, winH));
+        var wa = screen.WorkingArea;
+
+        // left edge
+        if (Math.Abs(rc.Left - wa.Left) < SnapDistance)
+        { rc.Left = wa.Left; rc.Right = rc.Left + winW; }
+        // right edge
+        else if (Math.Abs(rc.Right - wa.Right) < SnapDistance)
+        { rc.Right = wa.Right; rc.Left = rc.Right - winW; }
+
+        // top edge
+        if (Math.Abs(rc.Top - wa.Top) < SnapDistance)
+        { rc.Top = wa.Top; rc.Bottom = rc.Top + winH; }
+        // bottom edge
+        else if (Math.Abs(rc.Bottom - wa.Bottom) < SnapDistance)
+        { rc.Bottom = wa.Bottom; rc.Top = rc.Bottom - winH; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
 }

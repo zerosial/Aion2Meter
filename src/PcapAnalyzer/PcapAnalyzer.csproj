@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>pcapanalyzer</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpPcap" Version="6.3.1" />
+    <PackageReference Include="PacketDotNet" Version="1.4.8" />
+  </ItemGroup>
+
+  <!-- Compile-share protocol code from A2Meter (same approach as A2Inspect). -->
+  <ItemGroup>
+    <Compile Include="..\A2Capture\PcapAnalyzer.cs" Link="PcapAnalyzer.cs" />
+    <Compile Include="..\A2Meter\Dps\Protocol\ProtocolUtils.cs"    Link="Protocol\ProtocolUtils.cs" />
+    <Compile Include="..\A2Meter\Dps\Protocol\Lz4Decoder.cs"       Link="Protocol\Lz4Decoder.cs" />
+    <Compile Include="..\A2Meter\Dps\Protocol\TcpReassembler.cs"   Link="Protocol\TcpReassembler.cs" />
+    <Compile Include="..\A2Meter\Dps\Protocol\StreamProcessor.cs"  Link="Protocol\StreamProcessor.cs" />
+  </ItemGroup>
+
+</Project>

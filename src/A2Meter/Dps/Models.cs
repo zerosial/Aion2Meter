@@ -35,6 +35,7 @@ internal sealed class ActorDps
     public long   DotDamage { get; set; }
     public List<SkillDps>? TopSkills { get; set; }
     public Dictionary<string, int>? SkillLevels { get; set; }
+    public List<BuffUptimeDto>? Buffs { get; set; }
 }
 
 internal sealed class SkillDps
@@ -51,6 +52,7 @@ internal sealed class SkillDps
     public double DodgeRate { get; set; }     // 회피
     public double BlockRate { get; set; }     // 막기
     public int[]? Specs { get; set; }         // 특화 tiers (1-based, sorted ascending)
+    public List<long>? HitLog { get; set; }   // per-hit damage values (regular + DoT ticks)
 }
 
 internal sealed class MobTarget
@@ -61,6 +63,24 @@ internal sealed class MobTarget
     public long   CurrentHp { get; set; }
     public long   TotalDamageReceived { get; set; }
     public bool   IsBoss { get; set; }
+
+    // ── Per-mob tracking state (matches A2Power MobInfo) ──
+    /// True when self has dealt at least one hit to this mob.
+    public bool   HasSelfParticipation { get; set; }
+    /// UTC timestamp of the last self hit on this mob.
+    public DateTime LastSelfHitAt { get; set; } = DateTime.MinValue;
+    /// True when the mob death has been confirmed (HP=0 or entity removed).
+    public bool   DeathConfirmed { get; set; }
+
+    // ── HP sample tracking for cumulative damage death detection (A2Power) ──
+    /// Last server-reported HP value from BossHp packet.
+    public long   HpAtLastSample { get; set; }
+    /// TotalDamageReceived at the time HpAtLastSample was recorded.
+    public long   DamageAtLastHpSample { get; set; }
+    /// First BossHp sample below MaxHp (used for MaxHp correction).
+    public long   FirstBossHpSample { get; set; }
+    /// Whether FirstBossHpSample has been set this session.
+    public bool   FirstBossHpSet { get; set; }
 }
 
 /// Party roster member — schema matches the original A2Viewer.Packet.PartyMember
@@ -80,4 +100,40 @@ internal sealed class PartyMember
     /// True when confirmed via actual party packet (PartyList/PartyUpdate/PartyAccept),
     /// not just seen nearby via UserInfo.
     public bool   IsPartyMember { get; set; }
+    /// True when this member was detected via a character lookup packet (0x4F 0x36).
+    public bool   IsLookup { get; set; }
+}
+
+/// JSON-friendly buff uptime DTO stored inside ActorDps / CombatRecord.
+internal sealed class BuffUptimeDto
+{
+    public string Name { get; set; } = "";
+    public int    BuffId { get; set; }
+    public double Uptime { get; set; }
+}
+
+/// Per-second DPS snapshot for timeline replay (matches A2Power TimelineEntry).
+internal sealed class TimelineEntry
+{
+    public int T { get; set; }
+    public List<TimelinePlayer> Players { get; set; } = new();
+}
+
+internal sealed class TimelinePlayer
+{
+    public int  EntityId { get; set; }
+    public long Damage { get; set; }
+    public long Dps { get; set; }
+}
+
+/// Per-hit detail log for combat replay (matches A2Power HitLogEntry).
+internal sealed class HitLogEntry
+{
+    public double  T { get; set; }
+    public int     EntityId { get; set; }
+    public string  SkillName { get; set; } = "";
+    public string? SkillIcon { get; set; }
+    public string? SkillType { get; set; }
+    public long    Damage { get; set; }
+    public uint    Flags { get; set; }
 }

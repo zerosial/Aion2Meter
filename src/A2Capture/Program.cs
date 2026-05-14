@@ -39,7 +39,7 @@ internal static class Program
             var device = SelectAdapter(opts.AdapterSpec)
                          ?? throw new InvalidOperationException("No suitable adapter found.");
 
-            var session = new CaptureSession(device, opts);
+            var session = new CaptureSession(device, opts, explicitAdapter: opts.AdapterSpec != null);
             session.Run();
             return 0;
         }
@@ -214,12 +214,15 @@ internal sealed class CaptureSession
 {
     private readonly ICaptureDevice _device;
     private readonly CliOptions _opts;
+    private readonly bool _explicitAdapter;
     private readonly string _sessionId;
     private readonly string _sessionDir;
     private readonly string _manifestPath;
     private readonly Manifest _manifest;
     private readonly object _writerLock = new();
 
+    private ICaptureDevice? _lockedDevice;
+    private List<ICaptureDevice>? _probing;
     private CaptureFileWriterDevice? _writer;
     private string? _currentFile;
     private DateTime _currentFileStart;
@@ -230,10 +233,11 @@ internal sealed class CaptureSession
     private long _droppedDevice;
     private long _droppedInterface;
 
-    public CaptureSession(ICaptureDevice device, CliOptions opts)
+    public CaptureSession(ICaptureDevice device, CliOptions opts, bool explicitAdapter = false)
     {
         _device = device;
         _opts = opts;
+        _explicitAdapter = explicitAdapter;
         _sessionId = DateTime.Now.ToString("yyyyMMdd-HHmmss");
         _sessionDir = Path.Combine(opts.OutDir, _sessionId);
         Directory.CreateDirectory(_sessionDir);
@@ -267,13 +271,7 @@ internal sealed class CaptureSession
 
     public void Run()
     {
-        _device.Open(DeviceModes.Promiscuous, read_timeout: 1000);
         var filter = _opts.ResolveFilter();
-        if (!string.IsNullOrWhiteSpace(filter))
-            _device.Filter = filter;
-
-        OpenNewFile();
-        _device.OnPacketArrival += OnPacket;
 
         var stopRequested = false;
         Console.CancelKeyPress += (_, e) =>
@@ -282,20 +280,74 @@ internal sealed class CaptureSession
             stopRequested = true;
         };
 
-        Console.WriteLine($"[a2cap] {_device.Description}");
+        // If an explicit adapter was given, use it directly.
+        // Otherwise, probe all viable adapters and lock onto whichever
+        // delivers the first TCP packet (same strategy as A2Meter's PacketSniffer).
+        if (_explicitAdapter)
+        {
+            _device.Open(DeviceModes.Promiscuous, read_timeout: 1000);
+            if (!string.IsNullOrWhiteSpace(filter))
+                _device.Filter = filter;
+            OpenNewFile();
+            _device.OnPacketArrival += OnPacket;
+            _device.StartCapture();
+            _lockedDevice = _device;
+            Console.WriteLine($"[a2cap] {_device.Description}");
+        }
+        else
+        {
+            // Open every viable adapter for probing.
+            var devices = CaptureDeviceList.Instance;
+            _probing = new List<ICaptureDevice>();
+            foreach (var d in devices)
+            {
+                if (d is LibPcapLiveDevice ld)
+                {
+                    var desc = ld.Description ?? "";
+                    if (desc.Contains("loopback", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!HasIPv4(ld)) continue;
+                }
+                try
+                {
+                    d.Open(DeviceModes.Promiscuous, read_timeout: 1000);
+                    if (!string.IsNullOrWhiteSpace(filter)) d.Filter = filter;
+                    d.OnPacketArrival += OnProbePacket;
+                    d.StartCapture();
+                    _probing.Add(d);
+                    var fn = (d is LibPcapLiveDevice l) ? l.Interface.FriendlyName : null;
+                    Console.WriteLine($"[a2cap] probing: {fn ?? d.Description ?? d.Name}");
+                }
+                catch { }
+            }
+            if (_probing.Count == 0)
+                throw new InvalidOperationException("No suitable capture adapter found.");
+            Console.WriteLine($"[a2cap] scanning {_probing.Count} adapter(s) for game traffic...");
+        }
+
         Console.WriteLine($"[a2cap] filter='{filter}'  out={_sessionDir}");
         Console.WriteLine("[a2cap] press Ctrl-C to stop");
         WriteManifest();
-
-        _device.StartCapture();
 
         using var ticker = new Timer(_ => Tick(), null, 1000, 1000);
         while (!stopRequested) Thread.Sleep(100);
 
         Console.WriteLine();
         Console.WriteLine("[a2cap] stopping...");
-        try { _device.StopCapture(); } catch { }
-        try { _device.Close(); }       catch { }
+        if (_lockedDevice != null)
+        {
+            try { _lockedDevice.StopCapture(); } catch { }
+            try { _lockedDevice.Close(); }       catch { }
+        }
+        // Close any remaining probe adapters.
+        if (_probing != null)
+        {
+            foreach (var d in _probing)
+            {
+                try { d.StopCapture(); } catch { }
+                try { d.Close(); } catch { }
+            }
+            _probing = null;
+        }
         lock (_writerLock) { _writer?.Close(); _writer = null; }
 
         _manifest.EndedAt = DateTime.UtcNow;
@@ -303,6 +355,65 @@ internal sealed class CaptureSession
         _manifest.BytesTotal = _totalBytes;
         WriteManifest();
         Console.WriteLine($"[a2cap] done. {_totalPackets:n0} pkts / {Mb(_totalBytes):n1} MB across {_manifest.Files.Count} file(s).");
+    }
+
+    private static bool HasIPv4(LibPcapLiveDevice d)
+    {
+        if (d.Interface.Addresses is null) return false;
+        foreach (var a in d.Interface.Addresses)
+            if (a.Addr?.ipAddress?.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) return true;
+        return false;
+    }
+
+    /// Probe callback: first adapter to deliver a TCP packet with payload wins.
+    private void OnProbePacket(object sender, PacketCapture e)
+    {
+        if (_lockedDevice != null) return;
+
+        try
+        {
+            var raw = e.GetPacket();
+            var pkt = raw.GetPacket();
+            if (pkt?.PayloadPacket?.PayloadPacket is not TcpPacket tcp) return;
+            if (tcp.PayloadData == null || tcp.PayloadData.Length == 0) return;
+
+            var winner = (ICaptureDevice)sender;
+
+            // Lock onto this adapter.
+            lock (_writerLock)
+            {
+                if (_lockedDevice != null) return;
+                _lockedDevice = winner;
+
+                winner.OnPacketArrival -= OnProbePacket;
+                winner.OnPacketArrival += OnPacket;
+
+                // Write the first packet immediately.
+                OpenNewFile();
+                _writer?.Write(raw);
+                Interlocked.Increment(ref _totalPackets);
+                Interlocked.Add(ref _totalBytes, raw.Data.Length);
+                _currentFileBytes += raw.Data.Length;
+            }
+
+            // Close all other probe adapters.
+            var others = _probing;
+            _probing = null;
+            if (others != null)
+            {
+                foreach (var d in others)
+                {
+                    if (ReferenceEquals(d, winner)) continue;
+                    d.OnPacketArrival -= OnProbePacket;
+                    try { d.StopCapture(); } catch { }
+                    try { d.Close(); } catch { }
+                }
+            }
+
+            var fn = (winner is LibPcapLiveDevice ld) ? ld.Interface.FriendlyName : null;
+            Console.WriteLine($"[a2cap] locked onto: {fn ?? winner.Description ?? winner.Name}");
+        }
+        catch { }
     }
 
     private void OnPacket(object sender, PacketCapture e)
@@ -335,26 +446,31 @@ internal sealed class CaptureSession
         _currentFileStart = DateTime.UtcNow;
         _currentFileBytes = 0;
         _writer = new CaptureFileWriterDevice(_currentFile);
-        _writer.Open(_device);
+        _writer.Open(_lockedDevice ?? _device);
         _manifest.Files.Add(name);
         WriteManifest();
     }
 
     private void Tick()
     {
-        try
+        var dev = _lockedDevice;
+        if (dev != null)
         {
-            var stats = _device.Statistics;
-            if (stats != null)
+            try
             {
-                _droppedDevice = (long)stats.DroppedPackets;
-                _droppedInterface = (long)stats.InterfaceDroppedPackets;
+                var stats = dev.Statistics;
+                if (stats != null)
+                {
+                    _droppedDevice = (long)stats.DroppedPackets;
+                    _droppedInterface = (long)stats.InterfaceDroppedPackets;
+                }
             }
+            catch { }
         }
-        catch { }
 
         if (_opts.Quiet) return;
-        Console.Write($"\r[a2cap] {_totalPackets,12:n0} pkts  {Mb(_totalBytes),9:n1} MB  drop dev={_droppedDevice} if={_droppedInterface}     ");
+        string status = dev != null ? "" : " (waiting for game traffic...)";
+        Console.Write($"\r[a2cap] {_totalPackets,12:n0} pkts  {Mb(_totalBytes),9:n1} MB  drop dev={_droppedDevice} if={_droppedInterface}{status}     ");
     }
 
     private void WriteManifest()

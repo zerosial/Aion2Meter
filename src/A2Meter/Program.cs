@@ -15,9 +15,20 @@ internal static class Program
 {
     private static Mutex? _mutex;
 
+    private static readonly string CrashLogPath =
+        System.IO.Path.Combine(AppContext.BaseDirectory, "crash.log");
+
     [STAThread]
     private static void Main(string[] args)
     {
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            WriteCrashLog("UnhandledException", e.ExceptionObject as Exception);
+
+        Application.ThreadException += (_, e) =>
+            WriteCrashLog("ThreadException", e.Exception);
+
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+
         var parsed = ParseArgs(args);
 
         if (parsed.Demo)
@@ -57,9 +68,10 @@ internal static class Program
             overlay.Hotkeys = hk;
             hk.RegisterFromSettings(settings.Shortcuts);
 
-            // Auto-update check — show toast if available.
+            // 업데이터 자동 배치 + 업데이트 확인.
             _ = Task.Run(async () =>
             {
+                await AutoUpdater.EnsureUpdaterAsync(msg => Console.Error.WriteLine(msg));
                 var result = await AutoUpdater.CheckAsync(msg => Console.Error.WriteLine(msg));
                 if (result.HasValue)
                 {
@@ -188,5 +200,15 @@ internal static class Program
             }
         }
         return (dir, realtime, speed, demo);
+    }
+
+    private static void WriteCrashLog(string source, Exception? ex)
+    {
+        try
+        {
+            var msg = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {source}\n{ex}\n\n";
+            System.IO.File.AppendAllText(CrashLogPath, msg);
+        }
+        catch { }
     }
 }

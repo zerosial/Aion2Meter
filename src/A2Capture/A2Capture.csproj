@@ -13,6 +13,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="PcapAnalyzer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="PacketDotNet" Version="1.4.8" />
     <PackageReference Include="SharpPcap" Version="6.3.1" />
   </ItemGroup>

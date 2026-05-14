@@ -29,8 +29,16 @@ internal interface IPacketSource : IDisposable
     /// Combat events parsed downstream. Wired up by the protocol parser, not the source itself.
     event Action<CombatHitArgs>? CombatHit;
     event Action<MobTarget?>? TargetChanged;
+    /// Fired when a boss or dummy mob spawns (before any damage).
+    event Action<MobTarget>? MobSpawned;
+    /// Fired when an entity is removed from the world (death / despawn).
+    event Action<int>? EntityRemoved;
     event Action<PartyMember>? PartyMemberSeen;
     event Action? PartyLeft;
+    /// Dungeon enter/exit. Arg = dungeonId (>0 = entered, 0 = left).
+    event Action<int>? DungeonChanged;
+    /// Buff apply/remove. Args: (entityId, buffId, type, durationMs, timestamp).
+    event Action<int, int, int, uint, long>? BuffEvent;
 
     void Start();
     void Stop();

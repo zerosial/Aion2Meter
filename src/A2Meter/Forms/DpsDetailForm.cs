@@ -23,13 +23,19 @@ internal sealed class DpsDetailForm : Form
     private readonly FlowLayoutPanel _infoPanel;
     private readonly FlowLayoutPanel _statsPanel;
     private readonly VirtualListPanel _list;
+    private readonly VirtualListPanel _buffList;
+    private readonly SplitContainer _split;
     private readonly Panel _titleBar;
     private Color _accentColor = Color.FromArgb(100, 160, 220);
 
     private readonly List<SkillRow> _rows = new();
+    private readonly List<DpsCanvas.SkillBar> _skillBars = new();
+    private readonly List<BuffRow> _buffRows = new();
+
+    private record struct BuffRow(string Name, string Uptime, double Percent);
 
     private record struct SkillRow(
-        string Name, int[]? Specs, string Hits,
+        string Name, string IconKey, int[]? Specs, string Hits,
         string Crit, string Back, string Strong, string Perfect, string Multi, string Dodge, string Block,
         string Max, string Dps, string Avg, string Damage, double Percent);
 
@@ -99,7 +105,7 @@ internal sealed class DpsDetailForm : Form
             Padding = new Padding(8, 2, 8, 6), WrapContents = false,
         };
 
-        // ── skill list ──
+        // ── skill list (top) ──
         _list = new VirtualListPanel
         {
             Dock = DockStyle.Fill,
@@ -107,7 +113,7 @@ internal sealed class DpsDetailForm : Form
             RowHeight = (int)(20 + _fs),
             Columns = new[]
             {
-                ("스킬",   120f, HorizontalAlignment.Left),
+                ("스킬",   145f, HorizontalAlignment.Left),
                 ("특화",    50f, HorizontalAlignment.Center),
                 ("타수",    35f, HorizontalAlignment.Right),
                 ("치명타",  48f, HorizontalAlignment.Right),
@@ -124,11 +130,49 @@ internal sealed class DpsDetailForm : Form
             },
         };
         _list.PaintRow += OnPaintRow;
+        _list.RowDoubleClicked += OnSkillDoubleClicked;
 
-        Controls.Add(_list);
+        // ── buff uptime list (bottom) ──
+        _buffList = new VirtualListPanel
+        {
+            Dock = DockStyle.Fill,
+            Font = new Font(_fn, _fs),
+            RowHeight = (int)(18 + _fs),
+            Columns = new[]
+            {
+                ("버프",      180f, HorizontalAlignment.Left),
+                ("업타임",     70f, HorizontalAlignment.Right),
+            },
+        };
+        _buffList.PaintRow += OnPaintBuffRow;
+
+        // ── split container ──
+        _split = new SplitContainer
+        {
+            Dock = DockStyle.Fill,
+            Orientation = Orientation.Horizontal,
+            BackColor = _t.BorderColor,
+            SplitterWidth = 4,
+            FixedPanel = FixedPanel.Panel2,
+        };
+        _split.Panel1.BackColor = _t.BgColor;
+        _split.Panel2.BackColor = _t.BgColor;
+        _split.Panel1.Controls.Add(_list);
+        _split.Panel2.Controls.Add(_buffList);
+
+        Controls.Add(_split);
         Controls.Add(_statsPanel);
         Controls.Add(_infoPanel);
         Controls.Add(_titleBar);
+
+        // Set initial splitter distance after layout.
+        Load += (_, _) => _split.SplitterDistance = Math.Max(100, _split.Height - 120);
+
+        SkillIconCache.Instance.IconReady += () =>
+        {
+            if (IsHandleCreated && !IsDisposed)
+                BeginInvoke(() => _list.Invalidate());
+        };
     }
 
     protected override CreateParams CreateParams
@@ -169,6 +213,7 @@ internal sealed class DpsDetailForm : Form
             _statsPanel.Controls.Add(Badge($"DoT {(double)row.DotDamage / row.Damage * 100:0.#}%"));
 
         _rows.Clear();
+        _skillBars.Clear();
         if (row.Skills is { Count: > 0 })
         {
             // Prefer SkillLevels carried on the row (saved in history JSON);
@@ -196,7 +241,7 @@ internal sealed class DpsDetailForm : Form
                 }
 
                 _rows.Add(new SkillRow(
-                    displayName, s.Specs, $"{s.Hits}",
+                    displayName, s.Name, s.Specs, $"{s.Hits}",
                     Pct(s.CritRate), Pct(s.BackRate), Pct(s.StrongRate),
                     Pct(s.PerfectRate), Pct(s.MultiHitRate), Pct(s.DodgeRate), Pct(s.BlockRate),
                     s.MaxHit > 0 ? $"{s.MaxHit:N0}" : "-",
@@ -204,9 +249,19 @@ internal sealed class DpsDetailForm : Form
                     avg > 0 ? $"{avg:N0}" : "-",
                     $"{s.Total:N0} ({s.PercentOfActor * 100:0.#}%)",
                     s.PercentOfActor));
+                _skillBars.Add(s);
             }
         }
         _list.RowCount = _rows.Count;
+
+        // Buff uptime
+        _buffRows.Clear();
+        if (row.Buffs is { Count: > 0 })
+        {
+            foreach (var b in row.Buffs)
+                _buffRows.Add(new BuffRow(b.Name, $"{b.Uptime * 100:0.#}%", b.Uptime));
+        }
+        _buffList.RowCount = _buffRows.Count;
     }
 
     private void OnPaintRow(Graphics g, Rectangle rowRect, Rectangle[] cells, int idx, bool sel)
@@ -216,7 +271,7 @@ internal sealed class DpsDetailForm : Form
         var theme = AppSettings.Instance.Theme;
         var fg = sel ? Color.White : theme.TextColor;
 
-        // Col 0: skill name with damage bar
+        // Col 0: skill icon + name with damage bar
         double maxPct = _rows.Count > 0 ? _rows[0].Percent : 1;
         if (maxPct <= 0) maxPct = 1;
         double rel = r.Percent / maxPct;
@@ -230,7 +285,20 @@ internal sealed class DpsDetailForm : Form
                 g.FillRectangle(brush, barRect);
             }
         }
-        DrawCell(g, cells[0], r.Name, fg, TextFormatFlags.Left);
+        int iconSize = cells[0].Height - 4;
+        int iconOffset = 0;
+        var icon = SkillIconCache.Instance.Get(r.IconKey);
+        if (icon != null)
+        {
+            int iy = cells[0].Y + (cells[0].Height - iconSize) / 2;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.DrawImage(icon, cells[0].X + 3, iy, iconSize, iconSize);
+            iconOffset = iconSize + 3;
+        }
+        {
+            var textRect = new Rectangle(cells[0].X + iconOffset, cells[0].Y, cells[0].Width - iconOffset, cells[0].Height);
+            DrawCell(g, textRect, r.Name, fg, TextFormatFlags.Left);
+        }
 
         // Col 1: spec boxes
         PaintSpecBoxes(g, cells[1], r.Specs);
@@ -239,6 +307,36 @@ internal sealed class DpsDetailForm : Form
         string[] texts = { r.Hits, r.Crit, r.Back, r.Strong, r.Perfect, r.Multi, r.Dodge, r.Block, r.Max, r.Dps, r.Avg, r.Damage };
         for (int i = 0; i < texts.Length; i++)
             DrawCell(g, cells[i + 2], texts[i], fg, TextFormatFlags.Right);
+    }
+
+    private void OnSkillDoubleClicked(int idx)
+    {
+        if (idx < 0 || idx >= _skillBars.Count) return;
+        var skill = _skillBars[idx];
+        if (skill.HitLog is not { Count: > 0 }) return;
+
+        var popup = new SkillHitDetailForm(skill, _accentColor);
+        popup.Show(this);
+    }
+
+    private void OnPaintBuffRow(Graphics g, Rectangle rowRect, Rectangle[] cells, int idx, bool sel)
+    {
+        if (idx < 0 || idx >= _buffRows.Count || cells.Length < 2) return;
+        var r = _buffRows[idx];
+        var theme = AppSettings.Instance.Theme;
+        var fg = sel ? Color.White : theme.TextColor;
+
+        // Uptime bar background
+        int barW = (int)(cells[0].Width * r.Percent);
+        if (barW > 0)
+        {
+            var barRect = new Rectangle(cells[0].X, cells[0].Y + 2, barW, cells[0].Height - 4);
+            using var brush = new SolidBrush(Color.FromArgb(60, _accentColor));
+            g.FillRectangle(brush, barRect);
+        }
+
+        DrawCell(g, cells[0], r.Name, fg, TextFormatFlags.Left);
+        DrawCell(g, cells[1], r.Uptime, fg, TextFormatFlags.Right);
     }
 
     private void DrawCell(Graphics g, Rectangle cell, string text, Color fg, TextFormatFlags align)

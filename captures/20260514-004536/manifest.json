@@ -1,0 +1,26 @@
+{
+  "sessionId": "20260514-004536",
+  "startedAt": "2026-05-13T15:45:36.9805208Z",
+  "endedAt": null,
+  "adapter": {
+    "name": "\\Device\\NPF_{5FFAF8F3-5C4C-4DBE-8FEC-3C61A151A436}",
+    "description": "Intel(R) Ethernet Controller I225-V",
+    "friendlyName": "\uC774\uB354\uB137",
+    "mac": "10FFE033BD46"
+  },
+  "filter": "tcp port 13328",
+  "port": 13328,
+  "portRange": null,
+  "rotateMb": 200,
+  "rotateMin": 30,
+  "host": {
+    "machine": "JADE",
+    "os": "Microsoft Windows NT 10.0.26100.0",
+    "libpcapVersion": "6.3.1.0"
+  },
+  "packetsTotal": 0,
+  "bytesTotal": 0,
+  "files": [
+    "capture-004536.pcapng"
+  ]
+}

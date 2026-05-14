@@ -96,6 +96,7 @@ internal sealed class SkillDatabase
     public bool IsMobBoss(int code)         => _mobIsBoss.TryGetValue(code, out var b) && b;
     public string? GetMobName(int code)     => _mobNames.TryGetValue(code, out var n) ? n : null;
     public string  GetDungeonName(int id)   => _dungeons.TryGetValue(id, out var n) ? n : $"#{id}";
+    public bool    IsDungeon(int id)       => _dungeons.ContainsKey(id);
     public bool IsKnownBuffCode(int code)   => _buffs.ContainsKey(code);
 
     /// Tries exact → /10*10 → /10000*10000 fallback chain (matches original A2Viewer).
