@@ -162,7 +162,9 @@ internal sealed class DpsPipeline : IDisposable
 
         // DOT + non-dummy filter: only allow DOT if target is a dummy, otherwise
         // require boss to be alive to accept hits.
-        if (!e.IsDot && (_currentTarget == null || !IsDummy(_currentTarget.Name)))
+        // FORCE RECORD BYPASS: If Admin ForceRecord is active, bypass this check.
+        bool forceRecord = AppSettings.Instance.AdminMode && AppSettings.Instance.IsForceRecordEnabled;
+        if (!forceRecord && !e.IsDot && (_currentTarget == null || !IsDummy(_currentTarget.Name)))
         {
             if (_currentTarget is not { IsBoss: true, MaxHp: > 0, CurrentHp: > 0 })
                 return;

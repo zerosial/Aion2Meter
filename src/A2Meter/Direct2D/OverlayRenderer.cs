@@ -39,7 +39,8 @@ internal sealed class OverlayRenderer : IDisposable
 		CpToggle,
 		ScoreToggle,
 		TabDps,
-		TabParty
+		TabParty,
+		ForceRec
 	}
 
 	private const float PadX = 5f;
@@ -745,6 +746,20 @@ internal sealed class OverlayRenderer : IDisposable
 		dc.DrawTextLayout(new Vector2(num2, y), iDWriteTextLayout3, _brushBarFill);
 		iDWriteTextLayout3.Dispose();
 		_zones[ZoneId.TabParty] = new RectangleF(num2, y, widthIncludingTrailingWhitespace3, ToolbarHeight);
+		num2 += widthIncludingTrailingWhitespace3 + 4f;
+		if (AppSettings.Instance.AdminMode)
+		{
+			bool recOn = AppSettings.Instance.IsForceRecordEnabled;
+			Color4 colorRec = recOn ? new Color4(1f, 0.3f, 0.3f) : new Color4(0.45f, 0.48f, 0.55f);
+			_brushBarFill.Color = colorRec;
+			IDWriteTextLayout recLayout = _dwFactory.CreateTextLayout(recOn ? "REC(On)" : "REC", _fontSmall, 120f, ToolbarHeight);
+			recLayout.ParagraphAlignment = ParagraphAlignment.Center;
+			float recW = recLayout.Metrics.WidthIncludingTrailingWhitespace;
+			dc.DrawTextLayout(new Vector2(num2, y), recLayout, _brushBarFill);
+			recLayout.Dispose();
+			_zones[ZoneId.ForceRec] = new RectangleF(num2, y, recW, ToolbarHeight);
+		}
+		
 		int num3 = (int)(ToolbarHeight * 0.72f);
 		int num4 = Math.Max(2, (int)(ToolbarHeight * 0.11f));
 		float y2 = y + (ToolbarHeight - (float)num3) / 2f;

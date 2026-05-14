@@ -10,4 +10,5 @@ internal sealed class ShortcutSettings
     public string Restart   { get; set; } = "Alt+Shift+R";
     public string Anonymous { get; set; } = "Alt+A";
     public string Hide      { get; set; } = "Alt+H";
+    public string ForceRecord { get; set; } = "Ctrl+Alt+R";
 }

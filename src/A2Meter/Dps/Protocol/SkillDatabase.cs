@@ -40,6 +40,7 @@ internal sealed class SkillDatabase
             return;
         }
 
+#if !A2INSPECT
         if (Core.AppSettings.Instance.AdminMode)
         {
             var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
@@ -52,6 +53,7 @@ internal sealed class SkillDatabase
                 }
             }
         }
+#endif
     }
 
     private void LoadFromJson(string path)

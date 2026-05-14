@@ -45,6 +45,10 @@ internal sealed class ProtocolPipeline : IDisposable
     /// path can promote one of them to _currentTarget when hits arrive.
     private readonly System.Collections.Generic.Dictionary<int, MobTarget> _knownBosses = new();
 
+    /// Track recent non-boss spawns (entityId -> (mobCode, hp, name)). 
+    /// Used by Admin ForceRecord to retroactively promote a mob to boss when hit.
+    private readonly System.Collections.Generic.Dictionary<int, (int MobCode, int Hp, string Name)> _spawnCache = new();
+
     public ProtocolPipeline(IPacketSource source, SkillDatabase? skills = null, Action<string>? log = null)
     {
         _source = source;
@@ -143,6 +147,30 @@ internal sealed class ProtocolPipeline : IDisposable
         // Late-bind the focused boss to whichever known boss is actually being
         // hit. This is the key to multi-boss zones (환영의 회랑) where two
         // bosses spawn near-simultaneously — we follow the damage flow.
+        
+        // Admin ForceRecord: if we hit a non-boss and ForceRecord is ON, auto-promote it to boss!
+#if !A2INSPECT
+        if (Core.AppSettings.Instance.AdminMode && Core.AppSettings.Instance.IsForceRecordEnabled)
+#else
+        if (false)
+#endif
+        {
+            if (!_knownBosses.ContainsKey(targetId) && _spawnCache.TryGetValue(targetId, out var cachedMob))
+            {
+                var t = new MobTarget
+                {
+                    EntityId = targetId,
+                    Name = cachedMob.Name,
+                    MaxHp = cachedMob.Hp,
+                    CurrentHp = cachedMob.Hp,
+                    IsBoss = true,
+                };
+                _knownBosses[targetId] = t;
+                _skills.AddMobAndSave(cachedMob.MobCode, cachedMob.Name, true);
+                Console.WriteLine($"[AdminMode] Force-promoted mob to boss on hit: {cachedMob.Name} (HP: {cachedMob.Hp:N0})");
+            }
+        }
+
         if (_knownBosses.TryGetValue(targetId, out var bossForHit))
         {
             if (_currentTargetEntityId != targetId)
@@ -178,10 +206,22 @@ internal sealed class ProtocolPipeline : IDisposable
 
     private void OnMobSpawn(int mobId, int mobCode, int hp, int isBoss)
     {
-        if (isBoss == 0 || hp <= 0) return;
+        if (hp <= 0) return;
+        if (isBoss == 0)
+        {
+#if !A2INSPECT
+            if (Core.AppSettings.Instance.AdminMode && Core.AppSettings.Instance.IsForceRecordEnabled)
+            {
+                if (_spawnCache.Count > 5000) _spawnCache.Clear();
+                _spawnCache[mobId] = (mobCode, hp, $"[강제등록] 몹코드_{mobCode}");
+            }
+#endif
+            return;
+        }
         var name = _skills.GetMobName(mobCode);
         if (name == null)
         {
+#if !A2INSPECT
             if (Core.AppSettings.Instance.AdminMode)
             {
                 name = $"[신규보스] 코드_{mobCode}";
@@ -189,6 +229,7 @@ internal sealed class ProtocolPipeline : IDisposable
                 Console.WriteLine($"[AdminMode] Auto-registered new boss: {name} (HP: {hp:N0})");
             }
             else
+#endif
             {
                 return;
             }

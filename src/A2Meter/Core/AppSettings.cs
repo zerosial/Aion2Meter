@@ -32,6 +32,7 @@ internal sealed class AppSettings
     public bool GpuModeUserOverride { get; set; }
     public bool PromiscuousMode { get; set; }
     public bool AdminMode { get; set; } = false;
+    [JsonIgnore] public bool IsForceRecordEnabled { get; set; } = false;
 
     // ── visual ──
     public int Opacity { get; set; } = 90;       // 0..100

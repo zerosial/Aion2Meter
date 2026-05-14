@@ -81,6 +81,10 @@ internal sealed class HotkeyManager : IDisposable
         TryAdd(shortcuts.Anonymous, () => _form.TriggerAnonymousToggle());
         TryAdd(shortcuts.Compact,   () => _form.ToggleCompact());
         TryAdd(shortcuts.Hide,      () => _form.ToggleVisibility());
+        if (AppSettings.Instance.AdminMode)
+        {
+            TryAdd(shortcuts.ForceRecord, () => _form.TriggerForceRecordToggle());
+        }
     }
 
     public void Suspend() => _suspended = true;

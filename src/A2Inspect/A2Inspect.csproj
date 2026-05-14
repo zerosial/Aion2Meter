@@ -9,6 +9,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>a2inspect</AssemblyName>
     <LangVersion>latest</LangVersion>
+    <DefineConstants>A2INSPECT</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +30,7 @@
     <Compile Include="..\A2Meter\Dps\Protocol\ServerMap.cs"          Link="Protocol\ServerMap.cs" />
     <Compile Include="..\A2Meter\Dps\JobMapping.cs"                  Link="Dps\JobMapping.cs" />
     <Compile Include="..\A2Meter\Dps\Models.cs"                      Link="Dps\Models.cs" />
+    <Compile Include="..\A2Meter\Dps\BuffUptimeDto.cs"               Link="Dps\BuffUptimeDto.cs" />
   </ItemGroup>
 
   <!-- Same JSON DB the dispatcher reads from disk. -->

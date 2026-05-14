@@ -498,6 +498,16 @@ internal sealed class OverlayForm : Form
 		RequestRender();
 	}
 
+	public void TriggerForceRecordToggle()
+	{
+		AppSettings.Instance.IsForceRecordEnabled = !AppSettings.Instance.IsForceRecordEnabled;
+		if (_renderer != null)
+		{
+			// Need to notify the user via UI, maybe we can just trigger a render.
+			RequestRender();
+		}
+	}
+
 	private void OnCountdownClicked()
 	{
 		if (_pipeline != null)
@@ -653,6 +663,9 @@ internal sealed class OverlayForm : Form
 					_renderer.ActiveTab = OverlayRenderer.TabId.Party;
 					RequestRender();
 				}
+				break;
+			case OverlayRenderer.ZoneId.ForceRec:
+				TriggerForceRecordToggle();
 				break;
 			case OverlayRenderer.ZoneId.None:
 			{

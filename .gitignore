@@ -135,4 +135,14 @@ _NCrunch*
 # Environment files
 .env
 
-scratch_decompile
+# Decompile tools & output (local only)
+scratch_decompile/
+decompile_full.py
+extract_db.py
+show_diff.py
+DECOMPILE_GUIDE.md
+extracted_*.json
+extracted/
+ILSpy/
+*.exe
+diff.txt
