@@ -578,7 +578,8 @@ internal sealed class DpsPipeline : IDisposable
                 p.Name = $"{p.Name}[{sname}]";
         }
 
-        _history.Save(new CombatRecord
+        string dungeonName = _dungeonId.HasValue && _dungeonId.Value > 0 ? Protocol.SkillDatabase.Shared.GetDungeonName(_dungeonId.Value) : "필드";
+        var record = new CombatRecord
         {
             Timestamp   = DateTime.Now,
             BossName    = _currentTarget?.Name,
@@ -590,7 +591,56 @@ internal sealed class DpsPipeline : IDisposable
             Timeline    = _timeline.Count > 0 ? new List<TimelineEntry>(_timeline) : null,
             HitLog      = _hitLog.Count > 0 ? new List<HitLogEntry>(_hitLog) : null,
             DungeonId   = IsDummy(_currentTarget?.Name) ? null : _dungeonId,
-        });
+            FieldName   = dungeonName,
+        };
+
+        _history.Save(record);
+
+        // Upload combat stats to the Node.js backend
+        try
+        {
+            string selfName = "";
+            string selfServer = "";
+            foreach (var m in _party.Members.Values)
+            {
+                if (m.IsSelf)
+                {
+                    selfName = m.Nickname;
+                    selfServer = m.ServerName;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(selfName))
+            {
+                foreach (var p in snap.Players)
+                {
+                    if (p.EntityId == (_party.SelfEntityId ?? -1))
+                    {
+                        selfName = StripServerSuffix(p.Name);
+                        selfServer = p.ServerName;
+                        break;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(selfName) && !string.IsNullOrEmpty(selfServer))
+            {
+                // Safe fire-and-forget: Task.Run prevents async void crash propagation
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Api.StatsUploader.UploadRecordAsync(record, selfName, selfServer);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"[DpsPipeline] Upload background error: {ex.Message}");
+                    }
+                });
+            }
+        }
+        catch { /* best effort */ }
     }
 
     /// Matches A2Power ResetCombatStats(): clear damage but keep actor identities.

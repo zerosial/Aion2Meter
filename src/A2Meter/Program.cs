@@ -45,6 +45,9 @@ internal static class Program
             if (!createdNew) return;
         }
 
+        // ── Env Loader ──
+        EnvLoader.Load(System.IO.Path.Combine(AppContext.BaseDirectory, ".env"));
+
         // ── WinForms + D2D mode (default) ──
         ApplicationConfiguration.Initialize();
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);

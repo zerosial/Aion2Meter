@@ -19,6 +19,7 @@ internal sealed class CombatRecord
     public List<TimelineEntry>? Timeline { get; set; }
     public List<HitLogEntry>? HitLog { get; set; }
     public int? DungeonId { get; set; }
+    public string? FieldName { get; set; }
 }
 
 /// Saves / loads combat records as JSON files under %AppData%\A2Meter\history\.
