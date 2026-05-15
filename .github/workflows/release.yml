@@ -1,0 +1,73 @@
+name: Build and Release A2Meter
+
+on:
+  push:
+    tags:
+      - 'v*'  # v로 시작하는 모든 태그 (예: v1.0.3, v1.0.3-beta, v1.0.3-beta+server 등)에 대해 릴리즈 실행
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Create .env file from Secrets
+      shell: pwsh
+      run: |
+        $envContent = @"
+        ${{ secrets.ENV_FILE }}
+        "@
+        Set-Content -Path ".env" -Value $envContent -Encoding Utf8
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # target이 net8.0이므로 8.0 SDK 설치
+
+    - name: Restore Dependencies
+      run: dotnet restore src/A2Meter/A2Meter.csproj
+
+    - name: Read Version from csproj
+      id: get_version
+      shell: pwsh
+      run: |
+        [xml]$csproj = Get-Content "src/A2Meter/A2Meter.csproj"
+        $version = $csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+
+    - name: Publish Application
+      run: dotnet publish src/A2Meter/A2Meter.csproj -c Release -r win-x64 --self-contained false -o publish/A2Meter-v${{ steps.get_version.outputs.version }} -p:DebugType=None -p:DebugSymbols=false
+
+    - name: Remove PDB Files
+      shell: pwsh
+      run: |
+        Remove-Item -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/*.pdb" -Force -ErrorAction SilentlyContinue
+
+    - name: Prepare Admin Executable
+      shell: pwsh
+      run: |
+        Copy-Item -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter.exe" -Destination "publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter_Admin.exe"
+
+    - name: Compress Publish Directory
+      shell: pwsh
+      run: |
+        Compress-Archive -Path "publish/A2Meter-v${{ steps.get_version.outputs.version }}/*" -DestinationPath "publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          publish/A2Meter-v${{ steps.get_version.outputs.version }}-win-x64.zip
+          publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter.exe
+          publish/A2Meter-v${{ steps.get_version.outputs.version }}/A2Meter_Admin.exe
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

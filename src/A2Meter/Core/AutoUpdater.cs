@@ -16,7 +16,7 @@ namespace A2Meter.Core;
 /// A2Updater.exe는 %APPDATA%\A2Meter\A2Updater.exe에 배치됨.
 internal static class AutoUpdater
 {
-    private const string RepoOwner = "a2meter";
+    private const string RepoOwner = "zerosial";
     private const string RepoName = "Aion2Meter";
     private const string AssetName = "A2Meter.exe";
     private const string UpdaterAssetName = "A2Updater.exe";
